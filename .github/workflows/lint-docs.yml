@@ -1,0 +1,31 @@
+name: Lint Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install MkDocs & Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs-material pymdown-extensions
+
+      - name: Lint Markdown
+        uses: nosid/cocogitto-action@v3 # Or markdownlint-cli2 / markdownlint-action
+        continue-on-error: true
+
+      - name: Strict MkDocs Build (Checks links & syntax)
+        run: mkdocs build --strict

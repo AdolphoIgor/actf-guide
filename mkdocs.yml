@@ -1,0 +1,44 @@
+site_name: ACTF Architecture Guide
+site_description: Enterprise LLMOps & Continuous Training Documentation
+site_url: https://your-org.github.io/actf-guide/
+
+theme:
+  name: material
+  palette:
+    scheme: slate # Dark mode matching your codebase
+    primary: indigo
+    accent: blue
+  features:
+    - navigation.indexes       # Attaches folder clicks to index.md
+    - navigation.instant       # Fast SPA-style page loads
+    - navigation.tracking      # Updates URL on scroll
+    - navigation.top           # Back to top button
+    - content.code.copy        # Copy code button
+    - content.code.annotate
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - admonition
+
+nav:
+  - Home: index.md
+  - 01 Foundations:
+      - 01 Enterprise LLMOps: docs/01_foundations/01_the_enterprise_llmops.md
+      - 02 Continuous Training Role: docs/01_foundations/02_the_continuous_training_role.md
+      - 03 Decoupled Workflow: docs/01_foundations/03_decoupled_workflow.md
+      - 04 Medallion Architecture: docs/01_foundations/04_the_medallion_architecture.md
+  - 02 Pipelines:
+      - The Data Pipeline:
+          - Overview: docs/02_pipelines/01_the_data_pipeline/index.md
+          - Foundations: docs/02_pipelines/01_the_data_pipeline/01_foundations/01_closed_loop_data_contract.md
+          - Data Writing: docs/02_pipelines/01_the_data_pipeline/02_data_writing/01_data_writing.md
+          - Filtering & Tokenization: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_tokenization/index.md
+          - Raw Data Ingestion: docs/02_pipelines/01_the_data_pipeline/04_raw_data_ingestion/01_raw_data_ingestion.md
+  - 03 Infrastructure:
+      - 01 The Infrastructure: docs/03_infrastructure/01_the_infrastructure.md

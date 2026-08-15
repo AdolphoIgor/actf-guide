@@ -1,0 +1,80 @@
+# ==============================================================================
+# ACTF Project .gitignore
+# ==============================================================================
+
+# --- Documentation Builds & MkDocs ---
+site/
+.cache/
+
+# --- Scratchpad & Temporary Workspace ---
+temp/
+*.tmp
+*.log
+
+# --- Python & Environment Management ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments (venv, virtualenv, uv)
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Testing & Linting Artifacts ---
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Environment Variables & Secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Large Binary Data & Local Datalake Spills ---
+*.parquet
+*.arrow
+*.bin
+*.pt
+*.safetensors
+*.db
+rocksdb_data/
+
+# --- IDE & Operating System Metadata ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code (ignore workspace state, keep recommendations if needed)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
