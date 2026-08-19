@@ -1,102 +1,44 @@
-# Step 12: Tokenization & Sequence Packing
+# Step 12: JIT Tokenization & Sequence Packing
 
-## 1. Core Objective
+## 1. Core Objective & Operational Placement
 
-Executing as the final processing stage of **Phase 3 - Reconvergence & Tokenization**, Step 12 transforms clean, audited, domain-policy-tagged text streams into static, numeric integer tensor matrices (`input_ids`, `attention_mask`).
+Executing as the second stage of the **Training Pipeline**, Step 12 converts template-formatted text strings into model-ready integer tensors. 
 
-Sequenced directly after **Step 11 (Pre-Tokenization Audit & Schema Alignment)**, Step 12 completes the data pipeline. By executing sub-word tokenization and optimal sequence packing—concatenating shorter sequences to eliminate padding waste—Step 12 produces high-density tensor shards ready for distributed deep learning model training.
+Operating in-memory within `/dev/shm`, Step 12 utilizes multi-threaded Rust tokenization backends to encode sub-word tokens via Byte-Pair Encoding (BPE), creates target-only label masks (setting prompt tokens to $-100$), packs variable-length conversations into fixed-length context windows ($B \times L$), and feeds tensors directly to PyTorch DataLoaders.
+
+```text
+ [ Formatted String ] ──► [ Multi-Threaded BPE ] ──► [ Label Masking (-100) ] ──► [ Tensor Matrix BxL ]
+
+```
 
 ---
 
 ## 2. Theoretical & Architectural Justification
 
-Sub-word tokenization and tensor serialization form the final boundary where textual data leaves string representation and enters formal linear algebra computation.
+Standard sequence padding wastes substantial compute on null attention tokens. Sequence packing concatenates multiple conversations up to the maximum context length $L$ (e.g., $L = 2048$), maximizing arithmetic intensity per batch.
 
-Passing unpacked variable-length documents directly into GPU training clusters introduces three critical architectural failure modes:
-
-### A. Quadratic Self-Attention Waste via Padding
-
-In Transformer architectures, the computational complexity and memory footprint of multi-head self-attention scale quadratically with sequence length $L$:
-
-$$\text{Attention Memory Complexity} = \mathcal{O}(L^2)$$
-
-When variable-length documents are naively padded with empty tokens to fit a fixed context window length $L$, the training cluster computes self-attention matrix multiplications over non-informative padding tokens. This burns massive GPU memory bandwidth and compute FLOPs without updating model parameters.
-
-### B. Tokenizer Re-Initialization & Memory Overhead
-
-Loading heavy sub-word tokenizer vocabulary configurations (e.g., tokenizers with vocabularies $V \ge 128,000$) for every incoming data chunk introduces severe CPU memory allocation and deserialization bottlenecks. Re-initializing tokenizers per batch creates processing stalls that starve GPU training clusters of data. Step 12 resolves this by utilizing persistent, stateful worker process pools that keep tokenizer instances resident in CPU memory.
-
-### C. Cross-Document Self-Attention Leakage during Packing
-
-When multiple short text documents are concatenated into a single fixed-length sequence matrix (e.g., packing four $1,024$-token documents into one $4,096$-token sequence window), tokens from adjacent documents occupy the same context window. Without document-isolated attention masking or block-diagonal attention boundaries, tokens from Document A will attend to tokens from Document B, corrupting self-attention representations during training.
+Simultaneously, Supervised Fine-Tuning (SFT) requires that loss is calculated **strictly over assistant completions**. Step 12 constructs the label tensor dynamically, ensuring user prompts do not distort empirical loss calculations.
 
 ---
 
-## 3. Theoretical Execution Mechanics
+## 3. Mathematical Formulation & Execution Mechanics
 
-Step 12 converts text streams into optimized tensor representations through a three-stage execution pipeline:
+### 1. Byte-Pair Encoding & Sequence Packing
 
-```text
-                     [ Audited Stream Post-Step 11 ]
-                                    │
-                                    ▼
-         ┌──────────────────────────────────────────────────────┐
-         │ Stage 1: Persistent Sub-Word Tokenization            │
-         │          & Integer Vectorization                     │
-         └──────────────────────────┬───────────────────────────┘
-                                    │
-                                    ▼
-         ┌──────────────────────────────────────────────────────┐
-         │ Stage 2: Dynamic Sequence Packing                    │
-         │          & Attention Mask Engineering                │
-         └──────────────────────────┬───────────────────────────┘
-                                    │
-                                    ▼
-         ┌──────────────────────────────────────────────────────┐
-         │ Stage 3: Tensor Serialization & Storage Export       │
-         └──────────────────────────┴───────────────────────────┘
+* Encodes strings into 1D integer arrays: $T = [t_1, t_2, \dots, t_N]$.
+* Concatenates sequence blocks separated by `<|im_end|>` tokens into 2D matrices of shape $B \times L$.
 
-```
+### 2. Target-Only SFT Label Masking
 
-### Stage 1: Persistent Sub-Word Tokenization & Integer Vectorization
+PyTorch cross-entropy loss ignores label tokens assigned a value of $-100$. Step 12 builds the training label tensor:
 
-1. **Persistent Worker Allocation:** Persistent worker pools maintain resident instances of sub-word tokenizer configurations in CPU memory, eliminating per-batch deserialization overhead.
-2. **Sub-Word Integer Mapping:** Clean text blocks are processed according to the domain policy flags injected in **Step 11** (e.g., layout-preserving whitespace rules for Track B versus standard normalization for Track A). Character sequences are encoded into numerical vectors ($\text{input\_ids}$) within formal vocabulary boundaries:
+$$\text{Labels}[i] = \begin{cases} \text{Input\_ID}[i], & \text{if } i \in Y \text{ (Assistant Completion)} \\ -100, & \text{if } i \in X \text{ (System / User Prompt)} \end{cases}$$
 
-$$0 \le \text{Token ID} < V \quad (V = \text{Vocabulary Size})$$
+The objective function optimizes strictly over assistant tokens:
 
+$$\mathcal{L}_{\text{SFT}}(\theta) = -\frac{1}{|Y|} \sum_{t \in Y} \log P_\theta(y_t \mid x, y_{<t})$$
 
+### 3. Pre-Flight Verification Handshake (Gates 3 & 4)
 
-### Stage 2: Dynamic Sequence Packing & Attention Mask Engineering
-
-1. **Sequence Concatenation (Padding Elimination):** Shorter token vectors are concatenated sequentially until they reach the exact target context window length $L$ (e.g., $2,048$, $4,096$, or $8,192$ tokens).
-2. **Boundary Separation & Mask Engineering:** Document boundary tokens (e.g., `<|endoftext|>`) are inserted between packed records. The engine constructs corresponding binary attention matrices ($\text{attention\_mask} \in \{0, 1\}$) or block-diagonal position IDs to enforce document boundary isolation, preventing cross-document attention leakage during backpropagation.
-
-### Stage 3: Tensor Serialization & Storage Export
-
-1. **Tensor Shape Verification:** Vectorized array operations verify that final binary feature matrices adhere strictly to expected tensor dimensions:
-
-$$\text{Matrix Shape} = B \times L \quad (B = \text{Batch Size},\; L = \text{Sequence Length})$$
-
-
-2. **Binary Feature Export:** Packed tensor matrices are serialized directly into high-performance, contiguous columnar binary shards or uncompressed matrix arrays and written to cold storage feature registries, ready to feed distributed GPU training engines.
-
----
-
-## 4. Tokenization & Sequence Packing Strategy Matrix
-
-| Execution Phase / Feature Target | Structural / Algorithmic Signature | Theoretical Engine | Pipeline Action | Downstream Impact on Training |
-| --- | --- | --- | --- | --- |
-| **Sub-Word Integer Encoding** | Text-to-integer vector mapping within $0 \le \text{Token ID} < V$. | Multi-Threaded Sub-Word Tokenizer Backend | **Encoded:** Generates dense `input_ids` and `attention_mask` arrays. | Converts text strings into numeric machine tensors for GPU execution. |
-| **Sequence Packing (Padding Elimination)** | Concatenation of short sequences into fixed $B \times L$ context windows. | Vectorized Array Slicing & Packing Engine | **Packed:** Eliminates empty padding tokens across sequence matrices. | Maximizes GPU FLOP efficiency and reduces VRAM memory overhead. |
-| **Cross-Document Masking** | Insertion of boundary tokens and block-diagonal attention masks. | Attention Mask Builder | **Isolated:** Restricts attention computation to intra-document tokens. | Prevents cross-document attention leakage during gradient steps. |
-| **Tensor Serialization & Export** | Serialization of $B \times L$ matrices into binary feature shards. | Columnar Binary Matrix Exporter | **Exported:** Writes static tensor shards to feature registries. | Enables zero-copy streaming into GPU cluster VRAM during training. |
-
----
-
-## 5. Algorithmic Principles & Theoretical Tooling
-
-* **Sub-Word Segmentation Algorithms:** Mathematical tokenization algorithms (Byte-Pair Encoding, WordPiece, Unigram) designed to decompose text into sub-word vocabulary units.
-* **Multi-Threaded Native Tokenizer Backends:** High-performance tokenization engines compiled in systems languages (Rust/C++) to bypass interpreter lock constraints and parallelize encoding across CPU cores.
-* **Vectorized Matrix Slicing & Packing Utilities:** High-speed array manipulation libraries configured to shift, slice, and pack integer arrays into contiguous fixed-length matrices.
-* **Columnar & Binary Tensor Serializers:** High-throughput data serialization engines capable of converting multi-dimensional numerical arrays into flat, contiguous binary disk shards for distributed storage.
+* **Gate 3 (Data Leakage & Split Gate):** Asserts zero cryptographic hash overlap between Train and Validation splits while enforcing a $95/5$ ratio.
+* **Gate 4 (Pre-Flight Tensor Gate):** Validates matrix dimensions ($B \times L$), vocabulary boundaries ($0 \le \text{Token ID} < V$), and binary attention masks ($\{0, 1\}$) before passing batches to the model forward pass.

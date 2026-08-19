@@ -1,14 +1,14 @@
 # The Data Pipeline
 
 ## Executive Overview
-The **Data Pipeline** handles all data operations upstream of model training. Operating primarily on distributed CPU infrastructure (Ray Data / Apache Spark), it ingests raw records, enforces closed-loop guardrails, executes multi-phase filtering and deduplication, and prepares model-ready feature shards.
+The **Data Pipeline** operates upstream of model training on distributed CPU infrastructure (Ray Data / Apache Spark). It ingests raw records, validates physical and schema boundaries at Gate 1, executes multi-phase filtering, deduplication, and PII masking, and certifies universal, model-agnostic text at Gate 2.
 
 ---
 
-## Section Sub-Modules
+## Data Pipeline Sub-Modules
 
-| Module | Focus Area |
-| :--- | :--- |
-| **[01 Data Writing](02_data_writing/index.md)** | Warehouse vs. object storage ingestion patterns, initial historical loads, and CDC watermarking. |
-| **[02 Raw Data Ingestion](03_raw_data_ingestion/index.md)** | Ray Data memory-throttling mechanics, Apache Arrow 3-buffer layout, and zero-copy shared memory. |
-| **[03 Filtering & Tokenization](04_filtering_and_tokenization/index.md)** | 3-phase branching DAG: shared ingestion, Track A (prose), Track B (code), and sequence packing. |
+| Sub-Module | Focus Area | Key Artifacts |
+| :--- | :--- | :--- |
+| **[01 Data Writing](01_data_writing/index.md)** | Warehouse vs. Object Storage ingestion, initial historical loads, and CDC watermarking. | Raw Bronze files |
+| **[02 Raw Data Ingestion](02_raw_data_ingestion/index.md)** | Ray Data memory-throttling, Apache Arrow 3-buffer layout, and **Gate 1 (Ingestion Gate)**. | Verified Bronze partitions |
+| **[03 Filtering & Curation](03_filtering_and_curation/index.md)** | 3-phase branching DAG (normalization, exact/fuzzy dedup, AST syntax, PII, decontamination) and **Gate 2 (Pre-Tokenization Gate)**. | Universal Silver Parquet |
