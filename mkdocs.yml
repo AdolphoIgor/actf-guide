@@ -31,8 +31,9 @@ nav:
   - 01 Foundations:
       - 01 Enterprise LLMOps: docs/01_foundations/01_the_enterprise_llmops.md
       - 02 Continuous Training Role: docs/01_foundations/02_the_continuous_training_role.md
-      - 03 Decoupled Workflow: docs/01_foundations/03_decoupled_workflow.md
-      - 04 Medallion Architecture: docs/01_foundations/04_the_medallion_architecture.md
+      - 03 Medallion Architecture: docs/01_foundations/03_the_medallion_architecture.md
+      - 04 Decoupled Workflow: docs/01_foundations/04_decoupled_workflow.md
+      - 05 Closed Loop Guardrails: docs/01_foundations/05_closed_loop_guardrails.md
   - 02 Pipelines:
       - The Data Pipeline:
           - Overview: docs/02_pipelines/01_the_data_pipeline/index.md
