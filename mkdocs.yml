@@ -31,51 +31,118 @@ markdown_extensions:
 nav:
   - Home: index.md
   - 01 Foundations:
-      - 01 Foundations Overview: docs/01_foundations/index.md
-      - 01 Enterprise LLMOps: docs/01_foundations/01_the_enterprise_llmops.md
-      - 02 Continuous Training Role: docs/01_foundations/02_the_continuous_training_role.md
-      - 03 Medallion Architecture: docs/01_foundations/03_the_medallion_architecture.md
-      - 04 Decoupled Workflow: docs/01_foundations/04_decoupled_workflow.md
-      - 05 Closed-Loop Guardrails: docs/01_foundations/05_closed_loop_guardrails.md
+      - Overview: 01_foundations/index.md
+      - 01 Enterprise LLMOps: 01_foundations/01_the_enterprise_llmops.md
+      - 02 Continuous Training Role: 01_foundations/02_the_continuous_training_role.md
+      - 03 Medallion Architecture: 01_foundations/03_the_medallion_architecture.md
+      - 04 Decoupled Workflow: 01_foundations/04_decoupled_workflow.md
+      - 05 Closed-Loop Guardrails: 01_foundations/05_closed_loop_guardrails.md
+      - 06 Training:
+          - Overview: 01_foundations/06_training/index.md
+          - 01 Foundational Primer:
+              - Permutation Invariance & Positions: 01_foundations/06_training/01_foundational_primer/01_permutation_invariance_and_positions.md
+              - QKV Retrieval Analogy: 01_foundations/06_training/01_foundational_primer/02_qkv_retrieval_analogy.md
+              - Attention vs FFN Anatomy: 01_foundations/06_training/01_foundational_primer/03_attention_vs_ffn_anatomy.md
+              - Residual Highways & Gradients: 01_foundations/06_training/01_foundational_primer/04_residual_highways_and_gradients.md
+              - VRAM & Precision Budgeting: 01_foundations/06_training/01_foundational_primer/05_vram_and_precision_budgeting.md
+          - 02 Data Regimes & Tokenization:
+              - Ingestion Topologies: 01_foundations/06_training/02_data_regimes_and_tokenization/01_ingestion_topologies_pattern_a_b_cache.md
+              - Capacity Paradox in Small Regimes: 01_foundations/06_training/02_data_regimes_and_tokenization/02_capacity_paradox_in_small_regimes.md
+              - Target Benchmarks & Corpora: 01_foundations/06_training/02_data_regimes_and_tokenization/03_target_benchmarks_and_corpora.md
+              - Char vs BPE vs Byte-Level BBPE: 01_foundations/06_training/02_data_regimes_and_tokenization/04_char_vs_bpe_vs_byte_level_bbpe.md
+              - Vocab Compression & Stuttering: 01_foundations/06_training/02_data_regimes_and_tokenization/05_vocab_compression_and_stuttering.md
+              - Special Tokens & Delimiters: 01_foundations/06_training/02_data_regimes_and_tokenization/06_special_tokens_and_delimiters.md
+              - Conversation Splitting & Isolation: 01_foundations/06_training/02_data_regimes_and_tokenization/07_conversation_splitting_and_isolation.md
+              - Sequence Packing Mechanics: 01_foundations/06_training/02_data_regimes_and_tokenization/08_sequence_packing_mechanics.md
+          - 03 Architectural Topologies:
+              - Autoregressive Decoder (MiniGPT): 01_foundations/06_training/03_architectural_topologies/01_autoregressive_decoder_minigpt.md
+              - Masked Encoder (MiniBERT): 01_foundations/06_training/03_architectural_topologies/02_masked_bidirectional_minibert.md
+              - Seq2Seq Model (MiniT5): 01_foundations/06_training/03_architectural_topologies/03_seq2seq_encoder_decoder_minit5.md
+              - Attention Variants (MHA, GQA, MQA, SDPA): 01_foundations/06_training/03_architectural_topologies/04_attention_variants_mha_gqa_mqa_sdpa.md
+              - Positional Encodings (RoPE, ALiBi): 01_foundations/06_training/03_architectural_topologies/05_positional_encodings_rope_alibi.md
+              - Activations & Normalization: 01_foundations/06_training/03_architectural_topologies/06_activations_and_normalization.md
+              - Symmetric Weight Tying: 01_foundations/06_training/03_architectural_topologies/07_symmetric_weight_tying.md
+          - 04 Optimization & Loss Dynamics:
+              - Safety Perimeter (Gates 1-4): 01_foundations/06_training/04_optimization_and_loss_dynamics/01_safety_perimeter_gates_1_to_4.md
+              - SFT Cross-Entropy & Loss Masking: 01_foundations/06_training/04_optimization_and_loss_dynamics/02_sft_cross_entropy_and_loss_masking.md
+              - Gradient Mechanics & Norm Clipping: 01_foundations/06_training/04_optimization_and_loss_dynamics/03_gradient_mechanics_and_norm_clipping.md
+              - AdamW & Selective Weight Decay: 01_foundations/06_training/04_optimization_and_loss_dynamics/04_adamw_and_selective_weight_decay.md
+              - LR Warmup & Cosine Annealing: 01_foundations/06_training/04_optimization_and_loss_dynamics/05_lr_warmup_and_cosine_annealing.md
+              - Micro-Batching, Grad Accum & AMP: 01_foundations/06_training/04_optimization_and_loss_dynamics/06_micro_batching_grad_accum_amp.md
+              - Early Stopping & Snapshotting: 01_foundations/06_training/04_optimization_and_loss_dynamics/07_early_stopping_and_snapshotting.md
+          - 05 Inference Decoding & Calibration:
+              - KV-Caching Mechanics: 01_foundations/06_training/05_inference_decoding_and_calibration/01_kv_caching_mechanics.md
+              - Deterministic vs Stochastic Sampling: 01_foundations/06_training/05_inference_decoding_and_calibration/02_deterministic_vs_stochastic_sampling.md
+              - Temperature, Top-k, Top-p: 01_foundations/06_training/05_inference_decoding_and_calibration/03_temperature_top_k_top_p.md
+              - Offline Inference Verification: 01_foundations/06_training/05_inference_decoding_and_calibration/04_offline_inference_verification.md
+          - 06 Infrastructure & Resilience:
+              - Zero-Framework Modular PyTorch: 01_foundations/06_training/06_infrastructure_and_resilience/01_zero_framework_modular_pytorch.md
+              - Cryptographic Provenance & Git SHA: 01_foundations/06_training/06_infrastructure_and_resilience/02_cryptographic_provenance_and_git_sha.md
+              - Checkpoint Lineage (Latest vs Best): 01_foundations/06_training/06_infrastructure_and_resilience/03_checkpoint_lineage_latest_vs_best.md
+              - Fault-Tolerant Compute Lifecycle: 01_foundations/06_training/06_infrastructure_and_resilience/04_fault_tolerant_compute_lifecycle.md
+      - 07 Evaluating:
+          - Overview: 01_foundations/07_evaluating/index.md
+          - 01 Evaluation Frameworks & Metrics:
+              - Cross-Entropy & Perplexity: 01_foundations/07_evaluating/01_evaluation_frameworks_and_metrics/01_cross_entropy_and_perplexity.md
+              - Qualitative Probing Harness: 01_foundations/07_evaluating/01_evaluation_frameworks_and_metrics/02_qualitative_probing_harness.md
+              - Downstream Benchmarks & Unit Tests: 01_foundations/07_evaluating/01_evaluation_frameworks_and_metrics/03_downstream_task_benchmarks_and_unit_tests.md
+              - LLM-as-a-Judge & Calibration: 01_foundations/07_evaluating/01_evaluation_frameworks_and_metrics/04_llm_as_a_judge_rubrics_and_calibration.md
+          - 02 Controlled Ablation Framework:
+              - Experiment 1 (Positional Encodings): 01_foundations/07_evaluating/02_controlled_ablation_framework/01_experiment_1_positional_encodings.md
+              - Experiment 2 (Attention Topologies): 01_foundations/07_evaluating/02_controlled_ablation_framework/02_experiment_2_attention_topologies.md
+              - Experiment 3 (Activations & Norms): 01_foundations/07_evaluating/02_controlled_ablation_framework/03_experiment_3_activations_and_norms.md
+          - 03 Automated Governance & Registry:
+              - Telemetry Streaming & Circuit Breakers: 01_foundations/07_evaluating/03_automated_governance_and_registry/01_telemetry_streaming_and_circuit_breakers.md
+              - Gate 5 Assertion Math: 01_foundations/07_evaluating/03_automated_governance_and_registry/02_gate_05_gatekeeper_assertion_math.md
+              - Staging Quarantine & Metadata: 01_foundations/07_evaluating/03_automated_governance_and_registry/03_staging_quarantine_and_metadata.md
+              - MLflow Model Registry Governance: 01_foundations/07_evaluating/03_automated_governance_and_registry/04_mlflow_model_registry_governance.md
   - 02 Pipelines:
-      - 02 Pipelines Overview: docs/02_pipelines/index.md
+      - Overview: 02_pipelines/index.md
       - The Data Pipeline:
-          - Overview: docs/02_pipelines/01_the_data_pipeline/index.md
+          - Overview: 02_pipelines/01_the_data_pipeline/index.md
           - 01 Data Writing:
-              - Overview: docs/02_pipelines/01_the_data_pipeline/01_data_writing/index.md
-              - Data Writing Architecture: docs/02_pipelines/01_the_data_pipeline/01_data_writing/01_data_writing.md
+              - Overview: 02_pipelines/01_the_data_pipeline/01_data_writing/index.md
+              - Data Writing Architecture: 02_pipelines/01_the_data_pipeline/01_data_writing/01_data_writing.md
           - 02 Raw Data Ingestion:
-              - Overview: docs/02_pipelines/01_the_data_pipeline/02_raw_data_ingestion/index.md
-              - Raw Data Ingestion: docs/02_pipelines/01_the_data_pipeline/02_raw_data_ingestion/01_raw_data_ingestion.md
-              - Gate 1 Ingestion Gate: docs/02_pipelines/01_the_data_pipeline/02_raw_data_ingestion/02_gate_01_ingestion_gate.md
+              - Overview: 02_pipelines/01_the_data_pipeline/02_raw_data_ingestion/index.md
+              - Raw Data Ingestion: 02_pipelines/01_the_data_pipeline/02_raw_data_ingestion/01_raw_data_ingestion.md
+              - Gate 1 Ingestion Gate: 02_pipelines/01_the_data_pipeline/02_raw_data_ingestion/02_gate_01_ingestion_gate.md
           - 03 Filtering & Curation:
-              - Overview: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/index.md
+              - Overview: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/index.md
               - Phase 1 Shared Ingestion:
-                  - Step 01 Normalization: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_01_normalization.md
-                  - Step 02 Boilerplate Stripping: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_02_boilerplate_stripping.md
-                  - Step 03 Exact Deduplication: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_03_exact_deduplication.md
-                  - Step 04 Metadata Inspection: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_04_metadata_inspection_and_routing.md
+                  - Step 01 Normalization: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_01_normalization.md
+                  - Step 02 Boilerplate Stripping: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_02_boilerplate_stripping.md
+                  - Step 03 Exact Deduplication: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_03_exact_deduplication.md
+                  - Step 04 Metadata Inspection: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_01_shared_ingestion/step_04_metadata_inspection_and_routing.md
               - Phase 2 Domain Specific:
                   - Track A Prose:
-                      - Step 5a Standard Heuristics: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_5a_standard_heuristics.md
-                      - Step 6a MinHash Dedup: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_6a_minhash_fuzzy_deduplication.md
-                      - Step 7a Natural Language CQF: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_7a_natural_language_cqf.md
-                      - Step 8a FastText Language ID: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_8a_fasttext_language_id.md
+                      - Step 5a Standard Heuristics: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_5a_standard_heuristics.md
+                      - Step 6a MinHash Dedup: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_6a_minhash_fuzzy_deduplication.md
+                      - Step 7a Natural Language CQF: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_7a_natural_language_cqf.md
+                      - Step 8a FastText Language ID: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_a_standard_natural_language_branch/step_8a_fasttext_language_id.md
                   - Track B Code:
-                      - Step 5b Disambiguation: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_5b_code_and_syntax_disambiguation.md
-                      - Step 6b Code MinHash AST Dedup: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_6b_code_specific_minhash_ast_deduplication.md
-                      - Step 7b Domain Quality: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_7b_domain_quality_check.md
-                      - Step 8b Syntax Verification: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_8b_syntax_verification.md
+                      - Step 5b Disambiguation: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_5b_code_and_syntax_disambiguation.md
+                      - Step 6b Code MinHash AST Dedup: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_6b_code_specific_minhash_ast_deduplication.md
+                      - Step 7b Domain Quality: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_7b_domain_quality_check.md
+                      - Step 8b Syntax Verification: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_02_domain_specific_processing/track_b_specialized_domain_branch/step_8b_syntax_verification.md
               - Phase 3 Reconvergence & Safety:
-                  - Step 09 Safety & PII: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_03_reconvergence_and_safety/step_09_safety_and_pii_redaction.md
-                  - Step 10 Decontamination: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_03_reconvergence_and_safety/step_10_cross_dataset_decontamination.md
-                  - Gate 2 Pre-Tokenization: docs/02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_03_reconvergence_and_safety/step_gate_02_pre_tokenization_gate.md
+                  - Step 09 Safety & PII: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_03_reconvergence_and_safety/step_09_safety_and_pii_redaction.md
+                  - Step 10 Decontamination: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_03_reconvergence_and_safety/step_10_cross_dataset_decontamination.md
+                  - Gate 2 Pre-Tokenization: 02_pipelines/01_the_data_pipeline/03_filtering_and_curation/phase_03_reconvergence_and_safety/step_gate_02_pre_tokenization_gate.md
       - The Training Pipeline:
-          - Overview: docs/02_pipelines/02_the_training_pipeline/index.md
-          - Step 11 JIT Schema Alignment: docs/02_pipelines/02_the_training_pipeline/step_11_pre_tokenization_audit_and_schema_alignment.md
-          - Step 12 JIT Tokenization & Packing: docs/02_pipelines/02_the_training_pipeline/step_12_tokenization_and_sequence_packing.md
+          - Overview: 02_pipelines/02_the_training_pipeline/index.md
+          - Step 11 JIT Schema Alignment: 02_pipelines/02_the_training_pipeline/step_11_pre_tokenization_audit_and_schema_alignment.md
+          - Step 12 JIT Tokenization & Packing: 02_pipelines/02_the_training_pipeline/step_12_tokenization_and_sequence_packing.md
+          - Gate 3 Split Leakage Gate: 02_pipelines/02_the_training_pipeline/step_gate_03_split_leakage_gate.md
+          - Gate 4 Pre-Flight Tensor Gate: 02_pipelines/02_the_training_pipeline/step_gate_04_preflight_tensor_gate.md
+          - Step 13 Parameter Optimization Loop: 02_pipelines/02_the_training_pipeline/step_13_parameter_optimization_loop.md
+          - Step 14 Ephemeral Staging Export: 02_pipelines/02_the_training_pipeline/step_14_ephemeral_staging_export.md
       - The Gatekeeper Pipeline:
-          - Overview: docs/02_pipelines/03_the_gatekeeper_pipeline/index.md
+          - Overview: 02_pipelines/03_the_gatekeeper_pipeline/index.md
+          - Step 15 Gold Benchmark Evaluation: 02_pipelines/03_the_gatekeeper_pipeline/step_15_gold_benchmark_evaluation.md
+          - Step 16 LLM Judge Scoring: 02_pipelines/03_the_gatekeeper_pipeline/step_16_llm_judge_scoring.md
+          - Gate 5 Automated Gatekeeper: 02_pipelines/03_the_gatekeeper_pipeline/step_gate_05_automated_gatekeeper.md
+          - Step 17 MLflow Registry Promotion: 02_pipelines/03_the_gatekeeper_pipeline/step_17_mlflow_registry_promotion.md
   - 03 Infrastructure:
-      - Overview: docs/03_infrastructure/index.md
-      - Architecture: docs/03_infrastructure/01_the_infrastructure.md
+      - Overview: 03_infrastructure/index.md
+      - Architecture: 03_infrastructure/01_the_infrastructure.md

@@ -1,80 +1,51 @@
-# ==============================================================================
-# ACTF Project .gitignore
-# ==============================================================================
-
-# --- Documentation Builds & MkDocs ---
+# Documentation & Builds
 site/
 .cache/
 
-# --- Scratchpad & Temporary Workspace ---
+# Scratchpads & Unversioned Notes
 temp/
+updates.md
 *.tmp
 *.log
 
-# --- Python & Environment Management ---
+# Python & Virtual Environments
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environments (venv, virtualenv, uv)
 .venv/
-env/
 venv/
-ENV/
-env.bak/
-venv.bak/
+build/
+dist/
+*.egg-info/
 
-# --- Testing & Linting Artifacts ---
+# Linting & Testing
 .pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
 .ruff_cache/
+.mypy_cache/
+.coverage
 
-# --- Environment Variables & Secrets ---
+# Environment & Secrets
 .env
 .env.*
 !.env.example
 *.pem
 *.key
 
-# --- Large Binary Data & Local Datalake Spills ---
+# Local Data & Model Checkpoints
 *.parquet
 *.arrow
+*.safetensors
 *.bin
 *.pt
-*.safetensors
 *.db
 rocksdb_data/
 
-# --- IDE & Operating System Metadata ---
+# OS & Editor Metadata
 .DS_Store
 Thumbs.db
-desktop.ini
-
-# VS Code (ignore workspace state, keep recommendations if needed)
+.idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
-!.vscode/extensions.json
-.idea/
-*.swp
-*.swo
+
+docs/02_pipelines/updates.md
