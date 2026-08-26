@@ -51,16 +51,12 @@ Input Activation x (B x T x d_model)
 
 A single attention head can only focus on one dominant relationship per token at a time (e.g., matching a pronoun to its antecedent noun). By allocating $h$ heads in parallel, different heads specialize simultaneously across distinct linguistic, syntactic, and semantic features:
 
-* **Head 1:** Syntactic dependency (verbs attending to direct objects).
+- **Head 1:** Syntactic dependency (verbs attending to direct objects).
 
+- **Head 2:** Positional adjacency (attending strictly to immediate predecessor tokens).
+- **Head 3:** Coreference resolution (pronouns attending to character names).
 
-* **Head 2:** Positional adjacency (attending strictly to immediate predecessor tokens).
-* **Head 3:** Coreference resolution (pronouns attending to character names).
-
-
-* **Head 4:** Semantic and thematic affinity (nouns attending to associated adjectives).
-
-
+- **Head 4:** Semantic and thematic affinity (nouns attending to associated adjectives).
 
 ### Mathematical Formulation
 
@@ -105,20 +101,16 @@ Dropout Regularization:               Dropout(p)
 
 In canonical architectures (e.g., GPT-2, LLaMA, BERT), the inner dimension of the FFN expands by a factor of 4 ($d_{\text{ff}} = 4 \times d_{\text{model}}$).
 
-* **Associative Memory Storage:** Research indicates that the first linear layer ($W_1$) acts as an associative key memory, while the second linear layer ($W_2$) acts as a value retriever. The expanded intermediate space allows the network to store and recall vast amounts of factual knowledge without increasing context window computation.
-* **Non-Linear Disentanglement:** Expanding the representation space allows non-linear activation functions to partition complex, multi-modal semantic relationships that cannot be separated in the narrower $d_{\text{model}}$ space.
-
-
+- **Associative Memory Storage:** Research indicates that the first linear layer ($W_1$) acts as an associative key memory, while the second linear layer ($W_2$) acts as a value retriever. The expanded intermediate space allows the network to store and recall vast amounts of factual knowledge without increasing context window computation.
+- **Non-Linear Disentanglement:** Expanding the representation space allows non-linear activation functions to partition complex, multi-modal semantic relationships that cannot be separated in the narrower $d_{\text{model}}$ space.
 
 ### 2. Evolution of Activation Functions: ReLU to GELU to SwiGLU
 
-* **ReLU (Rectified Linear Unit):** $\text{ReLU}(z) = \max(0, z)$. Fast to compute, but hard-zeros all negative activations, leading to "dead neurons" where gradients evaluate to zero and stop updating.
+- **ReLU (Rectified Linear Unit):** $\text{ReLU}(z) = \max(0, z)$. Fast to compute, but hard-zeros all negative activations, leading to "dead neurons" where gradients evaluate to zero and stop updating.
 
+- **GELU (Gaussian Error Linear Unit):** $\text{GELU}(z) = z \cdot \Phi(z) = z \cdot \frac{1}{2}\left[1 + \text{erf}\left(\frac{z}{\sqrt{2}}\right)\right]$. Smoothly curves for slightly negative values, allowing low-magnitude gradients to propagate through deep residual connections and preventing gradient starvation.
 
-* **GELU (Gaussian Error Linear Unit):** $\text{GELU}(z) = z \cdot \Phi(z) = z \cdot \frac{1}{2}\left[1 + \text{erf}\left(\frac{z}{\sqrt{2}}\right)\right]$. Smoothly curves for slightly negative values, allowing low-magnitude gradients to propagate through deep residual connections and preventing gradient starvation.
-
-
-* **SwiGLU (Swish Gated Linear Unit):** $\text{SwiGLU}(x) = (x W_{\text{gate}} \cdot \text{SiLU}(x W_1)) W_2$. Utilized in modern architectures (LLaMA-3, Qwen-2.5) to introduce dynamic gating, rescaling the FFN hidden dimension to $\frac{8}{3} d_{\text{model}}$ to maintain parameter parity.
+- **SwiGLU (Swish Gated Linear Unit):** $\text{SwiGLU}(x) = (x W_{\text{gate}} \cdot \text{SiLU}(x W_1)) W_2$. Utilized in modern architectures (LLaMA-3, Qwen-2.5) to introduce dynamic gating, rescaling the FFN hidden dimension to $\frac{8}{3} d_{\text{model}}$ to maintain parameter parity.
 
 ---
 
@@ -247,11 +239,11 @@ class Block(nn.Module):
 
 In a standard Transformer block with hidden dimension $d = d_{\text{model}}$:
 
-| Component | Sub-Layer Matrices | Parameter Count (Excl. Biases) | Computational FLOPs (per token) | Primary Function |
-| --- | --- | --- | --- | --- |
-| **Attention (MHA)** | $W_Q, W_K, W_V, W_O$ | $4 d^2$ | $4 d^2 + 2 T d$ | Inter-token communication and routing. |
-| **Feed-Forward (FFN)** | $W_1 (d \rightarrow 4d), W_2 (4d \rightarrow d)$ | $8 d^2$ | $8 d^2$ | Factual knowledge storage and reasoning. |
-| **LayerNorm (LN1, LN2)** | $\gamma_1, \beta_1, \gamma_2, \beta_2$ | $4 d$ | $4 d$ | Numerical signal stabilization. |
-| **Total per Block** | — | $\approx 12 d^2$ | $\approx 12 d^2 + 2 T d$ | Complete Transformer unit. |
+| Component                | Sub-Layer Matrices                               | Parameter Count (Excl. Biases) | Computational FLOPs (per token) | Primary Function                         |
+| ------------------------ | ------------------------------------------------ | ------------------------------ | ------------------------------- | ---------------------------------------- |
+| **Attention (MHA)**      | $W_Q, W_K, W_V, W_O$                             | $4 d^2$                        | $4 d^2 + 2 T d$                 | Inter-token communication and routing.   |
+| **Feed-Forward (FFN)**   | $W_1 (d \rightarrow 4d), W_2 (4d \rightarrow d)$ | $8 d^2$                        | $8 d^2$                         | Factual knowledge storage and reasoning. |
+| **LayerNorm (LN1, LN2)** | $\gamma_1, \beta_1, \gamma_2, \beta_2$           | $4 d$                          | $4 d$                           | Numerical signal stabilization.          |
+| **Total per Block**      | —                                                | $\approx 12 d^2$               | $\approx 12 d^2 + 2 T d$        | Complete Transformer unit.               |
 
 The Feed-Forward layer contains **two-thirds ($66.7\%$) of the total parameter budget** in every Transformer block, while Attention handles the dynamic, sequence-dependent routing.

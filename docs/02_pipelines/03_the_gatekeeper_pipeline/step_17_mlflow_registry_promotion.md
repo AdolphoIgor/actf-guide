@@ -264,7 +264,7 @@ class MLflowRegistryPromoter:
         self.client.set_model_version_tag(
             self.model_name, candidate_version, "lifecycle_state", "PRODUCTION"
         )
-        
+
         # Remove staged alias
         try:
             self.client.delete_registered_model_alias(self.model_name, "staged")
@@ -353,11 +353,11 @@ Canary Rollout and Synchronization Flow:
 
 ## 6. Promotion Governance Matrix
 
-| Audit Target | Evaluation Rule | Threshold | Action on Failure |
-| --- | --- | --- | --- |
-| **Receipt Signature** | `receipt["verdict"] == "PROMOTED"` | Valid signature | Abort registration; quarantine artifact |
-| **Weight Digest** | `SHA256(weights) == receipt.sha256` | $100\%$ Match | Abort registration; file corruption alert |
-| **Signature Schema** | Input/Output `TensorSpec` defined | Complete Schema | Reject registration; missing API contract |
-| **Canary Error Rate** | HTTP 5xx / CUDA exception rate | $0.0\%$ on $1\%$ traffic | Trigger `execute_emergency_rollback()` |
-| **Canary Latency** | Inter-Token Latency (ITL) | $\text{ITL} \le \text{SLA}$ | Pause traffic ramp; inspect batching engine |
-| **Rollback Time** | Time to swap `@champion` alias | $< 5.0\text{ seconds}$ | Alert on-call infrastructure engineers |
+| Audit Target          | Evaluation Rule                     | Threshold                   | Action on Failure                           |
+| --------------------- | ----------------------------------- | --------------------------- | ------------------------------------------- |
+| **Receipt Signature** | `receipt["verdict"] == "PROMOTED"`  | Valid signature             | Abort registration; quarantine artifact     |
+| **Weight Digest**     | `SHA256(weights) == receipt.sha256` | $100\%$ Match               | Abort registration; file corruption alert   |
+| **Signature Schema**  | Input/Output `TensorSpec` defined   | Complete Schema             | Reject registration; missing API contract   |
+| **Canary Error Rate** | HTTP 5xx / CUDA exception rate      | $0.0\%$ on $1\%$ traffic    | Trigger `execute_emergency_rollback()`      |
+| **Canary Latency**    | Inter-Token Latency (ITL)           | $\text{ITL} \le \text{SLA}$ | Pause traffic ramp; inspect batching engine |
+| **Rollback Time**     | Time to swap `@champion` alias      | $< 5.0\text{ seconds}$      | Alert on-call infrastructure engineers      |

@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Validate Docs & Commits",
+      "type": "shell",
+      "command": "mkdocs build --strict && cog check",
+      "problemMatcher": []
+    }
+  ]
+}

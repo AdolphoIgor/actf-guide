@@ -48,56 +48,49 @@ docs/01_foundations/07_evaluating/
 
 ### Chapter Overview and Technical Scope
 
-* **[01. Cross-Entropy Loss, Perplexity Dynamics, and Information Theory](https://www.google.com/search?q=01_cross_entropy_and_perplexity.md)**
-* Mathematical derivation of Surprisal, Cross-Entropy, Shannon Entropy, and KL Divergence.
-* Perplexity as an effective branching factor ($\text{PPL} = \exp(\mathcal{L}_{\text{CE}})$).
-* The Tokenizer Incomparability Paradox and Bits-per-Byte (BPB) universal standardization.
-* Numerical stability via Log-Sum-Exp (LSE) and token-weighted aggregation.
+- **[01. Cross-Entropy Loss, Perplexity Dynamics, and Information Theory](https://www.google.com/search?q=01_cross_entropy_and_perplexity.md)**
+- Mathematical derivation of Surprisal, Cross-Entropy, Shannon Entropy, and KL Divergence.
+- Perplexity as an effective branching factor ($\text{PPL} = \exp(\mathcal{L}_{\text{CE}})$).
+- The Tokenizer Incomparability Paradox and Bits-per-Byte (BPB) universal standardization.
+- Numerical stability via Log-Sum-Exp (LSE) and token-weighted aggregation.
 
+- **[02. Qualitative Probing Harness and Behavioral Evaluation](https://www.google.com/search?q=02_qualitative_probing_harness.md)**
+- Behavioral probing taxonomy: schema syntax, negative constraints, and dialogue delimiters.
+- Deterministic assertions (Python AST, strict JSON parsing) vs. heuristic scoring.
+- Early detection of catastrophic forgetting and representation collapse during SFT.
 
-* **[02. Qualitative Probing Harness and Behavioral Evaluation](https://www.google.com/search?q=02_qualitative_probing_harness.md)**
-* Behavioral probing taxonomy: schema syntax, negative constraints, and dialogue delimiters.
-* Deterministic assertions (Python AST, strict JSON parsing) vs. heuristic scoring.
-* Early detection of catastrophic forgetting and representation collapse during SFT.
+- **[03. Downstream Task Benchmarks, Evaluation Protocols, and Unit Testing](https://www.google.com/search?q=03_downstream_task_benchmarks_and_unit_tests.md)**
+- Dual paradigms: Multiple-Choice Log-Likelihood vs. Generative Autoregressive Execution.
+- Length-normalized scoring and cyclic choice-permutation bias neutralization.
+- Sandboxed Python execution and the unbiased minimum-variance $\text{Pass@}k$ estimator.
 
+- **[04. LLM-as-a-Judge: Rubrics, Calibration, and Bias Mitigation](https://www.google.com/search?q=04_llm_as_a_judge_rubrics_and_calibration.md)**
+- Systematic judge biases: position bias, verbosity inflation, self-enhancement skew.
+- Symmetric bidirectional pairing ($J(A, B)$ and $J(B, A)$) for bias cancellation.
+- Cohen's Kappa ($\kappa$) human calibration and Bradley-Terry Elo tournament ratings.
 
-* **[03. Downstream Task Benchmarks, Evaluation Protocols, and Unit Testing](https://www.google.com/search?q=03_downstream_task_benchmarks_and_unit_tests.md)**
-* Dual paradigms: Multiple-Choice Log-Likelihood vs. Generative Autoregressive Execution.
-* Length-normalized scoring and cyclic choice-permutation bias neutralization.
-* Sandboxed Python execution and the unbiased minimum-variance $\text{Pass@}k$ estimator.
+- **[05. Split Leakage, Decontamination, and Benchmark Integrity](https://www.google.com/search?q=05_split_leakage_and_decontamination.md)**
+- Threat modeling: 13-gram exact match, near-duplicate paraphrasing, and dialogue fragmentation.
+- MinHash and Locality-Sensitive Hashing (LSH) for scalable fuzzy duplicate auditing.
+- Automated 13-gram decontamination across public benchmark suites (MMLU, GSM8K, HumanEval).
 
-
-* **[04. LLM-as-a-Judge: Rubrics, Calibration, and Bias Mitigation](https://www.google.com/search?q=04_llm_as_a_judge_rubrics_and_calibration.md)**
-* Systematic judge biases: position bias, verbosity inflation, self-enhancement skew.
-* Symmetric bidirectional pairing ($J(A, B)$ and $J(B, A)$) for bias cancellation.
-* Cohen's Kappa ($\kappa$) human calibration and Bradley-Terry Elo tournament ratings.
-
-
-* **[05. Split Leakage, Decontamination, and Benchmark Integrity](https://www.google.com/search?q=05_split_leakage_and_decontamination.md)**
-* Threat modeling: 13-gram exact match, near-duplicate paraphrasing, and dialogue fragmentation.
-* MinHash and Locality-Sensitive Hashing (LSH) for scalable fuzzy duplicate auditing.
-* Automated 13-gram decontamination across public benchmark suites (MMLU, GSM8K, HumanEval).
-
-
-* **[06. Statistical Significance, Gatekeeper Mathematics, and Release Gates](https://www.google.com/search?q=06_statistical_significance_and_gatekeeper.md)**
-* Paired McNemar Chi-Square tests and exact Binomial tests for benchmark deltas.
-* Empirical Bootstrap $95\%$ Confidence Intervals for non-inferiority margins ($\Delta \ge -\delta_{\text{margin}}$).
-* Expected Calibration Error (ECE) and Gate 5 automated promotion/quarantine state machines.
-
-
+- **[06. Statistical Significance, Gatekeeper Mathematics, and Release Gates](https://www.google.com/search?q=06_statistical_significance_and_gatekeeper.md)**
+- Paired McNemar Chi-Square tests and exact Binomial tests for benchmark deltas.
+- Empirical Bootstrap $95\%$ Confidence Intervals for non-inferiority margins ($\Delta \ge -\delta_{\text{margin}}$).
+- Expected Calibration Error (ECE) and Gate 5 automated promotion/quarantine state machines.
 
 ---
 
 ## 3. Evaluation Paradigm Comparison Matrix
 
-| Evaluation Domain | Target Output Metric | Primary Method | Algorithmic Complexity | Variance Profile | Primary Failure Mode |
-| --- | --- | --- | --- | --- | --- |
-| **Statistical Compression** | Perplexity (PPL), Bits-per-Byte (BPB) | Teacher-Forced Forward Pass | $\mathcal{O}(T)$ (Compute Bound) | Deterministic (Zero) | Tokenizer vocabulary mismatch |
-| **Schema & Syntax** | AST Validity %, JSON Parse % | Greedy Rollout + Formal Parsers | $\mathcal{O}(T)$ (Decode Bound) | Deterministic (Zero) | Unclosed brackets, runaway tokens |
-| **Knowledge QA (MMLU)** | Normalized Accuracy % | Log-Likelihood Option Ranking | $\mathcal{O}(K \cdot T)$ (Forward) | Deterministic (Zero) | Option order / position bias |
-| **Symbolic Math (GSM8K)** | Exact Match (EM) % | Greedy CoT + Regex Extractor | $\mathcal{O}(T_{\text{CoT}})$ (Decode) | Low (Greedy) | Format deviation from answer pattern |
-| **Functional Code** | Pass@1 / Pass@10 | Sandboxed Subprocess Test Execution | $\mathcal{O}(N_{\text{samples}} \cdot T)$ | High (Stochastic) | Subprocess timeouts, infinite loops |
-| **Subjective Quality** | Win Rate %, Elo Skill Rating | Symmetric LLM-as-a-Judge | $\mathcal{O}(2 \times T_{\text{Judge}})$ | Moderate | Verbosity bias, self-enhancement |
+| Evaluation Domain           | Target Output Metric                  | Primary Method                      | Algorithmic Complexity                    | Variance Profile     | Primary Failure Mode                 |
+| --------------------------- | ------------------------------------- | ----------------------------------- | ----------------------------------------- | -------------------- | ------------------------------------ |
+| **Statistical Compression** | Perplexity (PPL), Bits-per-Byte (BPB) | Teacher-Forced Forward Pass         | $\mathcal{O}(T)$ (Compute Bound)          | Deterministic (Zero) | Tokenizer vocabulary mismatch        |
+| **Schema & Syntax**         | AST Validity %, JSON Parse %          | Greedy Rollout + Formal Parsers     | $\mathcal{O}(T)$ (Decode Bound)           | Deterministic (Zero) | Unclosed brackets, runaway tokens    |
+| **Knowledge QA (MMLU)**     | Normalized Accuracy %                 | Log-Likelihood Option Ranking       | $\mathcal{O}(K \cdot T)$ (Forward)        | Deterministic (Zero) | Option order / position bias         |
+| **Symbolic Math (GSM8K)**   | Exact Match (EM) %                    | Greedy CoT + Regex Extractor        | $\mathcal{O}(T_{\text{CoT}})$ (Decode)    | Low (Greedy)         | Format deviation from answer pattern |
+| **Functional Code**         | Pass@1 / Pass@10                      | Sandboxed Subprocess Test Execution | $\mathcal{O}(N_{\text{samples}} \cdot T)$ | High (Stochastic)    | Subprocess timeouts, infinite loops  |
+| **Subjective Quality**      | Win Rate %, Elo Skill Rating          | Symmetric LLM-as-a-Judge            | $\mathcal{O}(2 \times T_{\text{Judge}})$  | Moderate             | Verbosity bias, self-enhancement     |
 
 ---
 

@@ -79,15 +79,13 @@ The compute architecture enforces physical execution boundaries. Every transform
 
 #### Node 1: Intake & Provenance Router
 
-* **Workload Role:** Ingests uncurated records from raw landing zones, standardizes character representations, removes document boilerplate, eliminates exact duplicates, and directs records toward domain-specific branches.
-* **Hardware Profile:** I/O & Memory-Optimized CPU Pool with high-speed shared memory IPC buffers and local NVMe caching.
-* **Architectural Responsibilities:**
-* *Unicode Standardization:* Enforces universal Unicode normalization across heterogeneous data formats to eliminate encoding anomalies and reconstructs broken hyphenations caused by OCR/PDF extractions.
-* *Boilerplate Elimination:* Strips structural DOM artifacts, navigation trees, licensing banners, and website headers before memory allocation.
-* *Zero-Serialization Exact Deduplication:* Hashes normalized document signatures into an in-memory key-value state store. Exact duplicates are pruned immediately without incurring compute overhead downstream.
-* *Metadata-Driven Early Branching:* Inspects table headers against a strict provenance whitelist. Explicit technical data routes directly to Branch B; untagged web documents undergo zero-copy symbol density profiling and micro-pass classification to determine whether they belong in Branch A or Branch B.
-
-
+- **Workload Role:** Ingests uncurated records from raw landing zones, standardizes character representations, removes document boilerplate, eliminates exact duplicates, and directs records toward domain-specific branches.
+- **Hardware Profile:** I/O & Memory-Optimized CPU Pool with high-speed shared memory IPC buffers and local NVMe caching.
+- **Architectural Responsibilities:**
+- _Unicode Standardization:_ Enforces universal Unicode normalization across heterogeneous data formats to eliminate encoding anomalies and reconstructs broken hyphenations caused by OCR/PDF extractions.
+- _Boilerplate Elimination:_ Strips structural DOM artifacts, navigation trees, licensing banners, and website headers before memory allocation.
+- _Zero-Serialization Exact Deduplication:_ Hashes normalized document signatures into an in-memory key-value state store. Exact duplicates are pruned immediately without incurring compute overhead downstream.
+- _Metadata-Driven Early Branching:_ Inspects table headers against a strict provenance whitelist. Explicit technical data routes directly to Branch B; untagged web documents undergo zero-copy symbol density profiling and micro-pass classification to determine whether they belong in Branch A or Branch B.
 
 ---
 
@@ -97,23 +95,19 @@ The compute architecture enforces physical execution boundaries. Every transform
 
 #### Node 2A: Prose Heuristics & Fuzzy Deduplication
 
-* **Workload Role:** Filters noisy web prose and performs near-duplicate document clustering.
-* **Hardware Profile:** Memory-Optimized CPU Pool (High RAM capacity for large-scale Locality-Sensitive Hashing indices).
-* **Architectural Responsibilities:**
-* *Vectorized Macro-Heuristics:* Uses low-level columnar compute kernels to filter documents violating natural language statistical properties (e.g., extreme punctuation-to-word ratios, high symbol density, low stop-word frequency, or repetitive character loops).
-* *Document-Level MinHash LSH:* Generates permutation signatures over word-level n-grams and executes banded Locality-Sensitive Hashing (LSH) to identify, cluster, and drop documents exceeding target Jaccard similarity thresholds.
-
-
+- **Workload Role:** Filters noisy web prose and performs near-duplicate document clustering.
+- **Hardware Profile:** Memory-Optimized CPU Pool (High RAM capacity for large-scale Locality-Sensitive Hashing indices).
+- **Architectural Responsibilities:**
+- _Vectorized Macro-Heuristics:_ Uses low-level columnar compute kernels to filter documents violating natural language statistical properties (e.g., extreme punctuation-to-word ratios, high symbol density, low stop-word frequency, or repetitive character loops).
+- _Document-Level MinHash LSH:_ Generates permutation signatures over word-level n-grams and executes banded Locality-Sensitive Hashing (LSH) to identify, cluster, and drop documents exceeding target Jaccard similarity thresholds.
 
 #### Node 3A: Semantic Quality & Language Identification
 
-* **Workload Role:** Evaluates deep semantic quality and verifies linguistic consistency.
-* **Hardware Profile:** GPU-Accelerated High-Throughput Inference Pool.
-* **Architectural Responsibilities:**
-* *Classifier-Based Quality Filtering (CQF):* Executes embedding models to score semantic depth, logical coherence, and informational density against a curated reference distribution. Low-scoring records are dropped.
-* *Paragraph-Level Language Identification:* Scans documents to detect accidental code-switching, broken machine translations, or out-of-distribution languages.
-
-
+- **Workload Role:** Evaluates deep semantic quality and verifies linguistic consistency.
+- **Hardware Profile:** GPU-Accelerated High-Throughput Inference Pool.
+- **Architectural Responsibilities:**
+- _Classifier-Based Quality Filtering (CQF):_ Executes embedding models to score semantic depth, logical coherence, and informational density against a curated reference distribution. Low-scoring records are dropped.
+- _Paragraph-Level Language Identification:_ Scans documents to detect accidental code-switching, broken machine translations, or out-of-distribution languages.
 
 ---
 
@@ -121,25 +115,21 @@ The compute architecture enforces physical execution boundaries. Every transform
 
 #### Node 2B: Code Syntax & Layout Disambiguation
 
-* **Workload Role:** Evaluates structured source code, markup, and technical documentation without applying natural language heuristic penalties.
-* **Hardware Profile:** Compute-Dense CPU Pool (High core count for multi-threaded regex and syntax parsing).
-* **Architectural Responsibilities:**
-* *Syntax Isolation:* Extracts fenced code blocks from mixed documentation using compiled regex state machines.
-* *Layout Profiling:* Detects minified scripts, compressed assets, and unformatted data dumps by evaluating line-length distributions.
-* *Boilerplate-Stripped Line Deduplication:* Prunes common license headers prior to computing line-level MinHash signatures, identifying copy-pasted utility blocks across distinct repositories.
-
-
+- **Workload Role:** Evaluates structured source code, markup, and technical documentation without applying natural language heuristic penalties.
+- **Hardware Profile:** Compute-Dense CPU Pool (High core count for multi-threaded regex and syntax parsing).
+- **Architectural Responsibilities:**
+- _Syntax Isolation:_ Extracts fenced code blocks from mixed documentation using compiled regex state machines.
+- _Layout Profiling:_ Detects minified scripts, compressed assets, and unformatted data dumps by evaluating line-length distributions.
+- _Boilerplate-Stripped Line Deduplication:_ Prunes common license headers prior to computing line-level MinHash signatures, identifying copy-pasted utility blocks across distinct repositories.
 
 #### Node 3B: AST Compilation & Grammar Validation
 
-* **Workload Role:** Validates structural code integrity and logical uniqueness via grammar parsing.
-* **Hardware Profile:** Compute-Dense CPU Pool.
-* **Architectural Responsibilities:**
-* *AST Parsing & Normalization:* Compiles source files into concrete Abstract Syntax Trees (ASTs). Replaces user-defined identifiers with canonical placeholders to identify and prune logic clones that differ only by variable renaming.
-* *Syntax Error Verification:* Calculates the density of syntax error nodes within the compiled AST. Files containing critical compilation breaks are discarded.
-* *Multi-Dialect Fallback:* Routes non-compiling structured queries through fallback dialect engines to recover valid domain-specific statements.
-
-
+- **Workload Role:** Validates structural code integrity and logical uniqueness via grammar parsing.
+- **Hardware Profile:** Compute-Dense CPU Pool.
+- **Architectural Responsibilities:**
+- _AST Parsing & Normalization:_ Compiles source files into concrete Abstract Syntax Trees (ASTs). Replaces user-defined identifiers with canonical placeholders to identify and prune logic clones that differ only by variable renaming.
+- _Syntax Error Verification:_ Calculates the density of syntax error nodes within the compiled AST. Files containing critical compilation breaks are discarded.
+- _Multi-Dialect Fallback:_ Routes non-compiling structured queries through fallback dialect engines to recover valid domain-specific statements.
 
 ---
 
@@ -147,15 +137,13 @@ The compute architecture enforces physical execution boundaries. Every transform
 
 #### Node 4: Safety & Decontamination
 
-* **Workload Role:** Enforces universal safety policies and benchmark integrity across all re-converged data branches prior to storage persistence.
-* **Hardware Profile:** GPU-Accelerated Compute Pool.
-* **Architectural Responsibilities:**
-* *Automated PII Redaction:* Uses Named Entity Recognition (NER) token classifiers combined with pattern extraction matrices to mask sensitive identifiers (e.g., credentials, personal addresses, personal IDs) with deterministic category tokens.
-* *Toxicity & Risk Mitigation:* Runs sequence classification models over all candidate text to detect and drop dangerous content or policy-violating text.
-* *Cross-Benchmark Decontamination:* Indexes evaluation benchmark prompts across standardized n-gram registries. Any training segment exhibiting verbatim overlap with evaluation sets is scrubbed to prevent synthetic metric inflation.
-* *Storage Handoff:* Persists model-agnostic, curated data into the Silver Data Lakehouse partition.
-
-
+- **Workload Role:** Enforces universal safety policies and benchmark integrity across all re-converged data branches prior to storage persistence.
+- **Hardware Profile:** GPU-Accelerated Compute Pool.
+- **Architectural Responsibilities:**
+- _Automated PII Redaction:_ Uses Named Entity Recognition (NER) token classifiers combined with pattern extraction matrices to mask sensitive identifiers (e.g., credentials, personal addresses, personal IDs) with deterministic category tokens.
+- _Toxicity & Risk Mitigation:_ Runs sequence classification models over all candidate text to detect and drop dangerous content or policy-violating text.
+- _Cross-Benchmark Decontamination:_ Indexes evaluation benchmark prompts across standardized n-gram registries. Any training segment exhibiting verbatim overlap with evaluation sets is scrubbed to prevent synthetic metric inflation.
+- _Storage Handoff:_ Persists model-agnostic, curated data into the Silver Data Lakehouse partition.
 
 ---
 
@@ -163,14 +151,12 @@ The compute architecture enforces physical execution boundaries. Every transform
 
 #### Node 5: Model-Dependent Tokenization & Sequence Packing
 
-* **Workload Role:** Ingests curated Silver datasets on-demand, applies target model configurations, and prepares fixed-length training tensors.
-* **Hardware Profile:** GPU-Accelerated Training Node Pool (utilizing high-bandwidth Host-to-Device memory and pinned VRAM buffers).
-* **Architectural Responsibilities:**
-* *Pre-Tokenization Audit & Policy Injection:* Validates byte-level UTF-8 integrity and applies model-specific tokenizer flags (e.g., whitespace retention rules for code tracks vs. chat/system template formatting for conversational prose).
-* *In-Memory Tokenization:* Encodes text streams into integer token sequences using the active model's vocabulary.
-* *Direct Sequence Packing:* Concatenates variable-length token arrays and packs them into fixed context windows (e.g., 2048, 4096, 8192 tokens) delimited by model-specific sequence boundary tokens. Attention masks and position arrays are constructed directly inside GPU memory, feeding training workers without disk-serialization bottlenecks.
-
-
+- **Workload Role:** Ingests curated Silver datasets on-demand, applies target model configurations, and prepares fixed-length training tensors.
+- **Hardware Profile:** GPU-Accelerated Training Node Pool (utilizing high-bandwidth Host-to-Device memory and pinned VRAM buffers).
+- **Architectural Responsibilities:**
+- _Pre-Tokenization Audit & Policy Injection:_ Validates byte-level UTF-8 integrity and applies model-specific tokenizer flags (e.g., whitespace retention rules for code tracks vs. chat/system template formatting for conversational prose).
+- _In-Memory Tokenization:_ Encodes text streams into integer token sequences using the active model's vocabulary.
+- _Direct Sequence Packing:_ Concatenates variable-length token arrays and packs them into fixed context windows (e.g., 2048, 4096, 8192 tokens) delimited by model-specific sequence boundary tokens. Attention masks and position arrays are constructed directly inside GPU memory, feeding training workers without disk-serialization bottlenecks.
 
 ---
 
@@ -203,12 +189,12 @@ The compute architecture enforces physical execution boundaries. Every transform
 
 ## 5. Compute Profile & Topology Matrix
 
-| Node Identifier | Conceptual Workload Domain | Hardware Architecture | Primary Computational Engines | Lifecycle / Pipeline Phase |
-| --- | --- | --- | --- | --- |
-| **Node 1** (`Intake & Router`) | Shared Ingestion | I/O & Memory-Optimized CPU | Vectorized C++ Kernels, Embedded KV-Store, Fast Classifier | Data Curation DAG |
-| **Node 2A** (`Prose Heuristics`) | Branch A: Natural Language | Memory-Optimized CPU | Columnar Compute Kernels, MinHash LSH Graph Index | Data Curation DAG |
-| **Node 3A** (`Semantic Quality`) | Branch A: Natural Language | GPU-Accelerated Inference | Neural Embeddings, Quality Scoring, Language ID | Data Curation DAG |
-| **Node 2B** (`Code Syntax`) | Branch B: Code & Technical | Compute-Dense CPU | Compiled Regex Engines, Line-Level MinHash | Data Curation DAG |
-| **Node 3B** (`AST Validation`) | Branch B: Code & Technical | Compute-Dense CPU | Concrete Syntax Tree Parsers, Dialect Transpilers | Data Curation DAG |
-| **Node 4** (`Safety & Decon`) | Shared Convergence | GPU-Accelerated Inference | NER Classifiers, Guardrail Encoders, N-Gram Registry | Data Curation DAG |
-| **Node 5** (`Tokenize & Pack`) | Model-Dependent Ingestion | GPU Training Node Pool | Parallel Byte-Pair Encoder, Memory Sequence Packer | Model Training DAG |
+| Node Identifier                  | Conceptual Workload Domain | Hardware Architecture      | Primary Computational Engines                              | Lifecycle / Pipeline Phase |
+| -------------------------------- | -------------------------- | -------------------------- | ---------------------------------------------------------- | -------------------------- |
+| **Node 1** (`Intake & Router`)   | Shared Ingestion           | I/O & Memory-Optimized CPU | Vectorized C++ Kernels, Embedded KV-Store, Fast Classifier | Data Curation DAG          |
+| **Node 2A** (`Prose Heuristics`) | Branch A: Natural Language | Memory-Optimized CPU       | Columnar Compute Kernels, MinHash LSH Graph Index          | Data Curation DAG          |
+| **Node 3A** (`Semantic Quality`) | Branch A: Natural Language | GPU-Accelerated Inference  | Neural Embeddings, Quality Scoring, Language ID            | Data Curation DAG          |
+| **Node 2B** (`Code Syntax`)      | Branch B: Code & Technical | Compute-Dense CPU          | Compiled Regex Engines, Line-Level MinHash                 | Data Curation DAG          |
+| **Node 3B** (`AST Validation`)   | Branch B: Code & Technical | Compute-Dense CPU          | Concrete Syntax Tree Parsers, Dialect Transpilers          | Data Curation DAG          |
+| **Node 4** (`Safety & Decon`)    | Shared Convergence         | GPU-Accelerated Inference  | NER Classifiers, Guardrail Encoders, N-Gram Registry       | Data Curation DAG          |
+| **Node 5** (`Tokenize & Pack`)   | Model-Dependent Ingestion  | GPU Training Node Pool     | Parallel Byte-Pair Encoder, Memory Sequence Packer         | Model Training DAG         |

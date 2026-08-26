@@ -4,7 +4,7 @@
 
 While autoregressive decoder architectures (such as MiniGPT) factorize sequence probability strictly from left to right ($P(X) = \prod P(x_t \mid x_{<t})$), this unidirectional constraint limits the model's ability to build holistic contextual representations. In tasks such as sentence classification, named entity recognition (NER), semantic search, and extractive question answering, a token's meaning depends equally on both its preceding context (the past) and its succeeding context (the future).
 
-**BERT** (Bidirectional Encoder Representations from Transformers) resolves this by abandoning causal generation in favor of the **Masked Language Modeling (MLM)** objective (the *Cloze* task).
+**BERT** (Bidirectional Encoder Representations from Transformers) resolves this by abandoning causal generation in favor of the **Masked Language Modeling (MLM)** objective (the _Cloze_ task).
 
 ```text
 Autoregressive Decoder (Unidirectional Context):
@@ -240,11 +240,11 @@ class MiniBERT(nn.Module):
         self.block_size = block_size
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        
+
         self.blocks = nn.Sequential(*[
             EncoderBlock(n_embd, n_head, dropout) for _ in range(n_layer)
         ])
-        
+
         self.ln_f = nn.LayerNorm(n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
 
@@ -252,7 +252,7 @@ class MiniBERT(nn.Module):
         self, idx: torch.Tensor, targets: torch.Tensor = None
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, T = idx.shape
-        
+
         # 1. Identity Embeddings + Spatial GPS Coordinates
         tok_emb = self.token_embedding_table(idx)
         pos_emb = self.position_embedding_table(torch.arange(T, device=idx.device))
@@ -293,7 +293,7 @@ def restore_sentence(
     Fills [MASK] slots in a string using MiniBERT's contextual predictions.
     """
     model.eval()
-    
+
     # 1. Parse string and replace "[MASK]" with mask_token_id
     tokens = []
     i = 0
@@ -306,10 +306,10 @@ def restore_sentence(
             i += 1
 
     x = torch.tensor([tokens], dtype=torch.long, device=device)  # (1, T)
-    
+
     # 2. Forward pass through Bidirectional Encoder
     logits, _ = model(x)  # (1, T, vocab_size)
-    
+
     # 3. Extract highest probability predictions
     probs = F.softmax(logits, dim=-1)
     predicted_ids = torch.argmax(probs, dim=-1).squeeze(0)
@@ -338,10 +338,10 @@ Output: "ROMEO: I love thee, Julia!"
 
 ## 7. Structural Comparison: Decoder (MiniGPT) vs. Encoder (MiniBERT)
 
-| Architectural Dimension | Decoder-Only (MiniGPT) | Masked Encoder (MiniBERT) |
-| --- | --- | --- |
-| **Attention Receptive Field** | Causal Lower-Triangular (`tril` enforced) | **Full Bidirectional (Unconstrained dense $T \times T$)** |
-| **Training Objective** | Next-Token Prediction: $\prod P(x_t \mid x_{<t})$ | **Masked Language Modeling: $P(x_{\mathcal{M}} \mid \tilde{X})$** |
-| **Input / Target Structure** | Inputs $X_{0 \dots T-1}$, Targets $Y_{1 \dots T}$ | **Inputs $X_{\text{noisy}}$, Targets $Y_{\text{clean}}$ (same length)** |
-| **Generative Capability** | Autoregressive text synthesis | **Cannot generate open-ended sequences** |
-| **Primary Production Role** | Dialogue, code generation, reasoning | **Embeddings, classification, re-ranking, NER** |
+| Architectural Dimension       | Decoder-Only (MiniGPT)                            | Masked Encoder (MiniBERT)                                               |
+| ----------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Attention Receptive Field** | Causal Lower-Triangular (`tril` enforced)         | **Full Bidirectional (Unconstrained dense $T \times T$)**               |
+| **Training Objective**        | Next-Token Prediction: $\prod P(x_t \mid x_{<t})$ | **Masked Language Modeling: $P(x_{\mathcal{M}} \mid \tilde{X})$**       |
+| **Input / Target Structure**  | Inputs $X_{0 \dots T-1}$, Targets $Y_{1 \dots T}$ | **Inputs $X_{\text{noisy}}$, Targets $Y_{\text{clean}}$ (same length)** |
+| **Generative Capability**     | Autoregressive text synthesis                     | **Cannot generate open-ended sequences**                                |
+| **Primary Production Role**   | Dialogue, code generation, reasoning              | **Embeddings, classification, re-ranking, NER**                         |

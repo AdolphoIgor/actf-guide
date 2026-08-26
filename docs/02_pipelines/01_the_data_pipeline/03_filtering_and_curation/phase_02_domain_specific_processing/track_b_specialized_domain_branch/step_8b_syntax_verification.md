@@ -62,8 +62,7 @@ Input code payloads pass through C-compiled language parsers corresponding to th
 
 $$\text{AST Error Density} = \frac{\text{Count}(\text{ERROR Nodes}) + \text{Count}(\text{MISSING Nodes})}{\text{Total AST Nodes}}$$
 
-
-3. **Zero-Tolerance Boundary:** Any document yielding an $\text{AST Error Density} > 0.0$ under its primary grammar (or failing tree compilation entirely) is flagged for dialect escalation or eviction.
+1. **Zero-Tolerance Boundary:** Any document yielding an $\text{AST Error Density} > 0.0$ under its primary grammar (or failing tree compilation entirely) is flagged for dialect escalation or eviction.
 
 ### Stage 2: Scope Resolution & EOF Truncation Inspection
 
@@ -83,19 +82,19 @@ Code bases frequently span legacy language versions and database-specific SQL di
 
 ## 4. Syntax Verification Strategy Matrix
 
-| Technical Content Type | Structural & AST Signature | Theoretical Engine | Pipeline Action | Downstream Impact in Phase 3 |
-| --- | --- | --- | --- | --- |
-| **Fully Valid Source File** | $0$ `ERROR`/`MISSING` nodes in AST; all scopes closed; complete syntax tree. | Multi-Language C++ AST Parser | **Retained:** Advances to Phase 3. | Re-converges into Step 9 (Safety Guardrails & PII Redaction). |
-| **Truncated / Cut-Off Code File** | `MISSING` closing tokens at EOF; dangling trailing operators. | Scope & Boundary Inspector | **Pruned:** Dropped due to incomplete structural context. | Prevents attention matrix poisoning during sequence packing (Step 12). |
-| **Dialect Mismatch Code** | Fails modern parser but passes legacy grammar (e.g., Py2 vs Py3, C++11 vs C++20). | Fallback Dialect & Transpiler Engine | **Retained:** Validated via fallback grammar tree. | Preserves valid historical codebases without syntax corruption. |
-| **Malformed LaTeX Document** | Unmatched `\begin{...}` or unclosed math environments (`$`, `$$`). | Structured Markup AST Compiler | **Pruned / Environment Stripped:** Broken math environment dropped. | Protects reasoning quality in mathematical pre-training domains. |
-| **Syntax-Corrupted Code Block** | Presence of `ERROR` nodes in AST due to missing keywords, colons, or commas. | Multi-Grammar AST Compiler | **Pruned:** Dropped due to grammatical invalidity. | Prevents training model on broken control-flow rules. |
+| Technical Content Type            | Structural & AST Signature                                                        | Theoretical Engine                   | Pipeline Action                                                     | Downstream Impact in Phase 3                                           |
+| --------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Fully Valid Source File**       | $0$ `ERROR`/`MISSING` nodes in AST; all scopes closed; complete syntax tree.      | Multi-Language C++ AST Parser        | **Retained:** Advances to Phase 3.                                  | Re-converges into Step 9 (Safety Guardrails & PII Redaction).          |
+| **Truncated / Cut-Off Code File** | `MISSING` closing tokens at EOF; dangling trailing operators.                     | Scope & Boundary Inspector           | **Pruned:** Dropped due to incomplete structural context.           | Prevents attention matrix poisoning during sequence packing (Step 12). |
+| **Dialect Mismatch Code**         | Fails modern parser but passes legacy grammar (e.g., Py2 vs Py3, C++11 vs C++20). | Fallback Dialect & Transpiler Engine | **Retained:** Validated via fallback grammar tree.                  | Preserves valid historical codebases without syntax corruption.        |
+| **Malformed LaTeX Document**      | Unmatched `\begin{...}` or unclosed math environments (`$`, `$$`).                | Structured Markup AST Compiler       | **Pruned / Environment Stripped:** Broken math environment dropped. | Protects reasoning quality in mathematical pre-training domains.       |
+| **Syntax-Corrupted Code Block**   | Presence of `ERROR` nodes in AST due to missing keywords, colons, or commas.      | Multi-Grammar AST Compiler           | **Pruned:** Dropped due to grammatical invalidity.                  | Prevents training model on broken control-flow rules.                  |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Multi-Language AST Parsing Frameworks:** Concrete syntax tree compilers configured to generate structured syntax trees and identify structural error nodes across diverse programming languages.
-* **Multi-Dialect SQL AST Parsers:** SQL parsing engines capable of evaluating dialect-specific syntax trees and transpiling statements across database engines.
-* **LaTeX & Structured Markup Compilers:** Grammar verification engines engineered to parse nested mathematical environments and validate environment closure bounds.
-* **Grammatical Scope Inspectors:** Tree-traversal algorithms that evaluate nested delimiter balancing and detect statement truncation at file boundaries.
+- **Multi-Language AST Parsing Frameworks:** Concrete syntax tree compilers configured to generate structured syntax trees and identify structural error nodes across diverse programming languages.
+- **Multi-Dialect SQL AST Parsers:** SQL parsing engines capable of evaluating dialect-specific syntax trees and transpiling statements across database engines.
+- **LaTeX & Structured Markup Compilers:** Grammar verification engines engineered to parse nested mathematical environments and validate environment closure bounds.
+- **Grammatical Scope Inspectors:** Tree-traversal algorithms that evaluate nested delimiter balancing and detect statement truncation at file boundaries.

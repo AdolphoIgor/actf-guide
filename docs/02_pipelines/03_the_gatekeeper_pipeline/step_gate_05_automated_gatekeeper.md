@@ -172,7 +172,7 @@ class AutomatedGatekeeperEngine:
         n_10 = int(np.sum((base_correct == 1) & (cand_correct == 0)))  # Regressions
         n_01 = int(np.sum((base_correct == 0) & (cand_correct == 1)))  # Improvements
         total = n_10 + n_01
-        
+
         if total == 0:
             return 0.0, 1.0, 0, 0
         if total < 25:
@@ -282,7 +282,7 @@ class AutomatedGatekeeperEngine:
         t3_passed = True
         c_wins, b_wins, ties, n_judge = judge_results
         eff_wr, wilson_low, wilson_upp = self._compute_wilson_ci(c_wins, ties, n_judge)
-        
+
         scorecard["llm_judge"] = {
             "effective_win_rate": eff_wr,
             "wilson_ci_lower": wilson_low,
@@ -372,15 +372,15 @@ When the Gatekeeper issues a verdict, the deployment pipeline executes automated
 
 ## 6. Gate 5 Production Decision Matrix
 
-| Evaluation Tier | Metric / Check | Mathematical Threshold | Failure Action |
-| --- | --- | --- | --- |
-| **Tier 1 (Invariants)** | AST Code Parse Rate | $\text{Rate} == 1.0$ ($100\%$) | **Hard Quarantine**; reject release |
-| **Tier 1 (Invariants)** | EOS Stop Compliance | $\text{Rate} \ge 0.99$ ($99\%$) | **Hard Quarantine**; runaway generation |
-| **Tier 1 (Invariants)** | KV-Cache Parity | $\Vert{}Z_{\text{naive}} - Z_{\text{cached}}\Vert{}_\infty < 10^{-3}$ | **Hard Quarantine**; cache divergence |
-| **Tier 1 (Invariants)** | PII Leak Count | $\text{Count} == 0$ | **Hard Quarantine**; security breach |
-| **Tier 2 (Benchmarks)** | McNemar Significance | $p \ge 0.05 \lor n_{\text{imp}} \ge n_{\text{reg}}$ | **Statistical Quarantine**; regression |
-| **Tier 2 (Benchmarks)** | Bootstrap Lower CI | $L_{0.025}(\Delta) \ge -0.005$ | **Statistical Quarantine**; non-inferiority |
-| **Tier 3 (LLM Judge)** | Wilson Lower Bound | $p_{\text{lower}} \ge 0.50$ | **Judge Quarantine**; preference loss |
-| **Tier 3 (LLM Judge)** | Effective Win Rate | $\hat{p} \ge 0.52$ ($52\%$) | **Judge Quarantine**; insufficient margin |
-| **Tier 4 (Operations)** | Expected Calibration | $\text{ECE} \le 0.06$ | **Calibration Quarantine**; uncalibrated |
-| **Tier 4 (Operations)** | Inter-Token Latency | $\text{ITL} \le \text{SLA Limit}$ | **Operational Quarantine**; latency breach |
+| Evaluation Tier         | Metric / Check       | Mathematical Threshold                                                | Failure Action                              |
+| ----------------------- | -------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
+| **Tier 1 (Invariants)** | AST Code Parse Rate  | $\text{Rate} == 1.0$ ($100\%$)                                        | **Hard Quarantine**; reject release         |
+| **Tier 1 (Invariants)** | EOS Stop Compliance  | $\text{Rate} \ge 0.99$ ($99\%$)                                       | **Hard Quarantine**; runaway generation     |
+| **Tier 1 (Invariants)** | KV-Cache Parity      | $\Vert{}Z_{\text{naive}} - Z_{\text{cached}}\Vert{}_\infty < 10^{-3}$ | **Hard Quarantine**; cache divergence       |
+| **Tier 1 (Invariants)** | PII Leak Count       | $\text{Count} == 0$                                                   | **Hard Quarantine**; security breach        |
+| **Tier 2 (Benchmarks)** | McNemar Significance | $p \ge 0.05 \lor n_{\text{imp}} \ge n_{\text{reg}}$                   | **Statistical Quarantine**; regression      |
+| **Tier 2 (Benchmarks)** | Bootstrap Lower CI   | $L_{0.025}(\Delta) \ge -0.005$                                        | **Statistical Quarantine**; non-inferiority |
+| **Tier 3 (LLM Judge)**  | Wilson Lower Bound   | $p_{\text{lower}} \ge 0.50$                                           | **Judge Quarantine**; preference loss       |
+| **Tier 3 (LLM Judge)**  | Effective Win Rate   | $\hat{p} \ge 0.52$ ($52\%$)                                           | **Judge Quarantine**; insufficient margin   |
+| **Tier 4 (Operations)** | Expected Calibration | $\text{ECE} \le 0.06$                                                 | **Calibration Quarantine**; uncalibrated    |
+| **Tier 4 (Operations)** | Inter-Token Latency  | $\text{ITL} \le \text{SLA Limit}$                                     | **Operational Quarantine**; latency breach  |

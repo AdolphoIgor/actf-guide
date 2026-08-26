@@ -69,17 +69,17 @@ Production model evaluation measures distinct capability vectors using standardi
 
 ### 1. Multi-Discipline Academic Knowledge (MMLU / ARC)
 
-* **MMLU (Massive Multitask Language Understanding):** Encompasses 57 subjects across STEM, humanities, social sciences, and professional fields (law, medicine). Evaluated primarily via 5-shot multiple-choice log-likelihood scoring.
-* **ARC (AI2 Reasoning Challenge):** Grade-school science questions partitioned into *Easy* and *Challenge* sets, designed to resist simple retrieval and word-co-occurrence heuristics.
+- **MMLU (Massive Multitask Language Understanding):** Encompasses 57 subjects across STEM, humanities, social sciences, and professional fields (law, medicine). Evaluated primarily via 5-shot multiple-choice log-likelihood scoring.
+- **ARC (AI2 Reasoning Challenge):** Grade-school science questions partitioned into _Easy_ and _Challenge_ sets, designed to resist simple retrieval and word-co-occurrence heuristics.
 
 ### 2. Mathematical Reasoning (GSM8K / MATH)
 
-* **GSM8K (Grade School Math 8K):** Multi-step linguistic math word problems requiring 2 to 8 reasoning steps. Evaluated using 8-shot Chain-of-Thought (CoT) prompting with exact numeric string extraction.
-* **MATH:** Advanced high-school competition mathematics (algebra, geometry, number theory, calculus) evaluated via exact symbolic LaTeX string extraction.
+- **GSM8K (Grade School Math 8K):** Multi-step linguistic math word problems requiring 2 to 8 reasoning steps. Evaluated using 8-shot Chain-of-Thought (CoT) prompting with exact numeric string extraction.
+- **MATH:** Advanced high-school competition mathematics (algebra, geometry, number theory, calculus) evaluated via exact symbolic LaTeX string extraction.
 
 ### 3. Code Generation (HumanEval / MBPP)
 
-* **HumanEval:** 164 handcrafted Python programming tasks containing docstrings, function signatures, reference implementations, and unit test suites. Evaluated via execution in a sandboxed runtime against unit tests.
+- **HumanEval:** 164 handcrafted Python programming tasks containing docstrings, function signatures, reference implementations, and unit test suites. Evaluated via execution in a sandboxed runtime against unit tests.
 
 ---
 
@@ -113,9 +113,9 @@ $$\text{Pass@}k = \underset{\text{Problems}}{\mathbb{E}} \left[ 1 - \frac{\binom
 
 Where:
 
-* $n$ is the total number of generated samples per problem (e.g., $n = 200$).
-* $c$ is the number of samples that successfully pass all unit tests ($c \le n$).
-* $k$ is the target evaluation threshold (e.g., $k \in \{1, 10, 100\}$).
+- $n$ is the total number of generated samples per problem (e.g., $n = 200$).
+- $c$ is the number of samples that successfully pass all unit tests ($c \le n$).
+- $k$ is the target evaluation threshold (e.g., $k \in \{1, 10, 100\}$).
 
 ```text
 Combinatorial Pass@k Estimator Behavior:
@@ -129,13 +129,13 @@ Combinatorial Pass@k Estimator Behavior:
 
 ## 4. Standardized Benchmark Evaluation Matrix
 
-| Benchmark | Target Task | Primary Paradigm | Scoring Metric | Few-Shot Protocol | Standard Baseline Expectation |
-| --- | --- | --- | --- | --- | --- |
-| **MMLU** | General Knowledge | Log-Likelihood | Accuracy (%) | 5-shot | $25.0\%$ (Random) to $>85.0\%$ (SOTA) |
-| **ARC-Challenge** | Grade-School Science | Log-Likelihood | Normalized Acc (%) | 25-shot / 0-shot | $25.0\%$ (Random) to $>90.0\%$ (SOTA) |
-| **GSM8K** | Math Word Problems | Generative CoT | Exact Match (EM) | 8-shot CoT | $<10.0\%$ (Untuned) to $>90.0\%$ (SOTA) |
-| **HumanEval** | Python Synthesis | Generative Code | Pass@1 / Pass@10 | 0-shot | $<15.0\%$ (Untuned) to $>80.0\%$ (SOTA) |
-| **HellaSwag** | Commonsense Reasoning | Log-Likelihood | Normalized Acc (%) | 10-shot / 0-shot | $25.0\%$ (Random) to $>90.0\%$ (SOTA) |
+| Benchmark         | Target Task           | Primary Paradigm | Scoring Metric     | Few-Shot Protocol | Standard Baseline Expectation           |
+| ----------------- | --------------------- | ---------------- | ------------------ | ----------------- | --------------------------------------- |
+| **MMLU**          | General Knowledge     | Log-Likelihood   | Accuracy (%)       | 5-shot            | $25.0\%$ (Random) to $>85.0\%$ (SOTA)   |
+| **ARC-Challenge** | Grade-School Science  | Log-Likelihood   | Normalized Acc (%) | 25-shot / 0-shot  | $25.0\%$ (Random) to $>90.0\%$ (SOTA)   |
+| **GSM8K**         | Math Word Problems    | Generative CoT   | Exact Match (EM)   | 8-shot CoT        | $<10.0\%$ (Untuned) to $>90.0\%$ (SOTA) |
+| **HumanEval**     | Python Synthesis      | Generative Code  | Pass@1 / Pass@10   | 0-shot            | $<15.0\%$ (Untuned) to $>80.0\%$ (SOTA) |
+| **HellaSwag**     | Commonsense Reasoning | Log-Likelihood   | Normalized Acc (%) | 10-shot / 0-shot  | $25.0\%$ (Random) to $>90.0\%$ (SOTA)   |
 
 ---
 
@@ -195,7 +195,7 @@ class MultipleChoiceEvaluator:
         # Slice loss strictly across completion tokens
         target_indices = torch.arange(prompt_len - 1, prompt_len + completion_len - 1, device=self.device)
         target_labels = shift_labels[target_indices]
-        
+
         token_log_probs = log_probs[target_indices, target_labels]
         total_log_prob = token_log_probs.sum().item()
 
@@ -252,7 +252,7 @@ class GenerativeMathEvaluator:
         gold = self.extract_numeric_answer(ground_truth_answer)
         if pred is None or gold is None:
             return False
-        
+
         # Float-safe exact match check
         try:
             return math.isclose(float(pred), float(gold), rel_tol=1e-5)

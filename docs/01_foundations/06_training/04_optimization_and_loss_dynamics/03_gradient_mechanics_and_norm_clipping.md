@@ -166,7 +166,7 @@ def manual_clip_grad_norm(
 
     # 3. Calculate scaling coefficient
     clip_coef = max_norm / (total_norm + eps)
-    
+
     # 4. Scale gradients in-place if global norm exceeds max_norm
     if clip_coef < 1.0:
         for p in params:
@@ -235,19 +235,19 @@ Trajectory Patterns:
 
 ### Threshold Tuning Guidelines
 
-* **Standard Pre-Training & SFT:** Set $\text{max\_norm} = 1.0$. This is the standard configuration across GPT-3, LLaMA-3, and Mistral recipes.
-* **Small Data / Pedagogical Regimes:** Set $\text{max\_norm} = 0.5\text{--}1.0$ to prevent single-batch memorization updates.
-* **RLHF / Direct Preference Optimization (DPO):** Set $\text{max\_norm} = 0.1\text{--}0.5$. Policy gradients in preference tuning exhibit high variance; tighter clipping bounds prevent policy collapse.
+- **Standard Pre-Training & SFT:** Set $\text{max\_norm} = 1.0$. This is the standard configuration across GPT-3, LLaMA-3, and Mistral recipes.
+- **Small Data / Pedagogical Regimes:** Set $\text{max\_norm} = 0.5\text{--}1.0$ to prevent single-batch memorization updates.
+- **RLHF / Direct Preference Optimization (DPO):** Set $\text{max\_norm} = 0.1\text{--}0.5$. Policy gradients in preference tuning exhibit high variance; tighter clipping bounds prevent policy collapse.
 
 ---
 
 ## 7. Comparative Summary of Gradient Stabilization Techniques
 
-| Dimension | Global $L_2$ Norm Clipping | Value Clipping (`clip_by_value`) | Weight Decay ($L_2$ Penalty) |
-| --- | --- | --- | --- |
-| **Operation** | Rescales full gradient vector $g$ | Clamps individual scalar values $g_j$ | Penalizes weight magnitude $\theta_i$ |
-| **Formula** | $g \cdot \min(1, \gamma / \Vert{}g\Vert{}_2)$ | $\max(-c, \min(c, g_j))$ | $\theta \leftarrow \theta - \eta \lambda \theta$ |
-| **Direction Preserved** | **Yes (100% invariant)** | No (distorts update trajectory) | N/A (applied to weights) |
-| **Primary Failure Prevented** | Gradient spikes, loss explosion | Extreme individual outliers | Weight explosion, overfitting |
-| **Application Point** | Between `.backward()` and `.step()` | Between `.backward()` and `.step()` | Inside optimizer `.step()` |
-| **Modern LLM Standard** | **Universal Standard** | Deprecated in Transformers | Universal Standard (AdamW) |
+| Dimension                     | Global $L_2$ Norm Clipping                    | Value Clipping (`clip_by_value`)      | Weight Decay ($L_2$ Penalty)                     |
+| ----------------------------- | --------------------------------------------- | ------------------------------------- | ------------------------------------------------ |
+| **Operation**                 | Rescales full gradient vector $g$             | Clamps individual scalar values $g_j$ | Penalizes weight magnitude $\theta_i$            |
+| **Formula**                   | $g \cdot \min(1, \gamma / \Vert{}g\Vert{}_2)$ | $\max(-c, \min(c, g_j))$              | $\theta \leftarrow \theta - \eta \lambda \theta$ |
+| **Direction Preserved**       | **Yes (100% invariant)**                      | No (distorts update trajectory)       | N/A (applied to weights)                         |
+| **Primary Failure Prevented** | Gradient spikes, loss explosion               | Extreme individual outliers           | Weight explosion, overfitting                    |
+| **Application Point**         | Between `.backward()` and `.step()`           | Between `.backward()` and `.step()`   | Inside optimizer `.step()`                       |
+| **Modern LLM Standard**       | **Universal Standard**                        | Deprecated in Transformers            | Universal Standard (AdamW)                       |

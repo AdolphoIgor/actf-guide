@@ -28,8 +28,8 @@ Generation 3: Dynamic Relative Coordinate Transforms (Q/K Projections & Attentio
 
 In standard early architectures (GPT-2, BERT), positions are parameterized as a static lookup table $W_{\text{pos}} \in \mathbb{R}^{L_{\max} \times d_{\text{model}}}$.
 
-* **Structural Failure:** The model can never evaluate sequences longer than the predefined context limit $L_{\max}$. Attempting inference on $T = L_{\max} + 1$ causes an index out-of-bounds error.
-* **Lack of Shift Invariance:** The model does not inherently know that the semantic relationship between positions $(1, 2)$ is identical to $(101, 102)$. It must learn translation invariance purely through empirical training exposure.
+- **Structural Failure:** The model can never evaluate sequences longer than the predefined context limit $L_{\max}$. Attempting inference on $T = L_{\max} + 1$ causes an index out-of-bounds error.
+- **Lack of Shift Invariance:** The model does not inherently know that the semantic relationship between positions $(1, 2)$ is identical to $(101, 102)$. It must learn translation invariance purely through empirical training exposure.
 
 ### B. The Relative Formulation
 
@@ -127,14 +127,14 @@ Heads with large slopes focus narrowly on immediate local context, while heads w
 
 ## 5. Architectural Comparison Matrix
 
-| Dimension | Absolute Learned (GPT-2) | Sinusoidal (Vaswani) | ALiBi (MPT, Bloom) | RoPE (Llama-3, Qwen-2.5) |
-| --- | --- | --- | --- | --- |
-| **Injection Point** | Input Embeddings | Input Embeddings | Attention Matrix ($Q K^T$) | Q and K Projections |
-| **Parameter Overhead** | $L_{\max} \times d_{\text{model}}$ parameters | 0 parameters | 0 parameters | 0 parameters |
-| **Relative Invariant** | No | Partially | Yes (Linear additive) | Yes (Rotational inner product) |
-| **Zero-Shot Length Extrapolation** | Hard failure at $T > L_{\max}$ | Poor generalization | High extrapolation | Moderate (Requires scaling like YaRN/NTK) |
-| **FlashAttention Compatibility** | Native | Native | Requires custom additive bias | Native (Q/K transformed pre-kernel) |
-| **KV-Cache Memory Overhead** | 0% | 0% | 0% | 0% (Keys cached post-rotation) |
+| Dimension                          | Absolute Learned (GPT-2)                      | Sinusoidal (Vaswani) | ALiBi (MPT, Bloom)            | RoPE (Llama-3, Qwen-2.5)                  |
+| ---------------------------------- | --------------------------------------------- | -------------------- | ----------------------------- | ----------------------------------------- |
+| **Injection Point**                | Input Embeddings                              | Input Embeddings     | Attention Matrix ($Q K^T$)    | Q and K Projections                       |
+| **Parameter Overhead**             | $L_{\max} \times d_{\text{model}}$ parameters | 0 parameters         | 0 parameters                  | 0 parameters                              |
+| **Relative Invariant**             | No                                            | Partially            | Yes (Linear additive)         | Yes (Rotational inner product)            |
+| **Zero-Shot Length Extrapolation** | Hard failure at $T > L_{\max}$                | Poor generalization  | High extrapolation            | Moderate (Requires scaling like YaRN/NTK) |
+| **FlashAttention Compatibility**   | Native                                        | Native               | Requires custom additive bias | Native (Q/K transformed pre-kernel)       |
+| **KV-Cache Memory Overhead**       | 0%                                            | 0%                   | 0%                            | 0% (Keys cached post-rotation)            |
 
 ---
 
@@ -168,13 +168,13 @@ class RotaryEmbedding(nn.Module):
     def _build_cache(self, seq_len: int):
         # Generate position coordinates: [0, 1, ..., seq_len - 1]
         t = torch.arange(seq_len, dtype=torch.float32, device=self.inv_freq.device)
-        
+
         # Outer product: (seq_len, dim // 2)
         freqs = torch.outer(t, self.inv_freq)
-        
+
         # Duplicate frequencies to cover full head dimension: (seq_len, dim)
         emb = torch.cat((freqs, freqs), dim=-1)
-        
+
         # Precompute cos and sin buffers: (1, 1, seq_len, dim)
         self.register_buffer("cos_cached", emb.cos()[None, None, :, :], persistent=False)
         self.register_buffer("sin_cached", emb.sin()[None, None, :, :], persistent=False)

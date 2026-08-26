@@ -150,14 +150,14 @@ Validation Loss (nats)
 
 ```
 
-| Model Configuration | Validation Loss (nats) | Perplexity (PPL) | MMLU (5-shot) | GSM8K (8-shot CoT) | HumanEval (Pass@1) |
-| --- | --- | --- | --- | --- | --- |
-| **Post-LN + LN + ReLU** | $2.142$ | $8.516$ | $32.4\%$ | $11.2\%$ | $8.5\%$ |
-| **Pre-LN + LN + GELU** | $1.984$ | $7.271$ | $36.8\%$ | $16.4\%$ | $12.8\%$ |
-| **Pre-LN + LN + SiLU** | $1.972$ | $7.185$ | $37.2\%$ | $17.1\%$ | $13.4\%$ |
-| **Pre-LN + RMSNorm + GELU** | $1.981$ | $7.250$ | $36.9\%$ | $16.5\%$ | $12.8\%$ |
-| **Pre-LN + LN + SwiGLU** | $1.916$ | $6.793$ | $40.8\%$ | $21.5\%$ | $16.4\%$ |
-| **Pre-LN + RMSNorm + SwiGLU** | **$1.912$** | **$6.766$** | **$41.2\%$** | **$21.9\%$** | **$17.1\%$** |
+| Model Configuration           | Validation Loss (nats) | Perplexity (PPL) | MMLU (5-shot) | GSM8K (8-shot CoT) | HumanEval (Pass@1) |
+| ----------------------------- | ---------------------- | ---------------- | ------------- | ------------------ | ------------------ |
+| **Post-LN + LN + ReLU**       | $2.142$                | $8.516$          | $32.4\%$      | $11.2\%$           | $8.5\%$            |
+| **Pre-LN + LN + GELU**        | $1.984$                | $7.271$          | $36.8\%$      | $16.4\%$           | $12.8\%$           |
+| **Pre-LN + LN + SiLU**        | $1.972$                | $7.185$          | $37.2\%$      | $17.1\%$           | $13.4\%$           |
+| **Pre-LN + RMSNorm + GELU**   | $1.981$                | $7.250$          | $36.9\%$      | $16.5\%$           | $12.8\%$           |
+| **Pre-LN + LN + SwiGLU**      | $1.916$                | $6.793$          | $40.8\%$      | $21.5\%$           | $16.4\%$           |
+| **Pre-LN + RMSNorm + SwiGLU** | **$1.912$**            | **$6.766$**      | **$41.2\%$**  | **$21.9\%$**       | **$17.1\%$**       |
 
 ---
 
@@ -177,9 +177,9 @@ Pre-LN + RMSNorm + SwiGLU        44.6 ms                 1.08x (+8.0% Speedup)
 
 ```
 
-* **LayerNorm Overhead:** Computing $\mu$, subtracting $\mu$, computing $\sigma^2$, and adding $\beta$ introduces additional memory reads and synchronization barriers in CUDA SRAM.
-* **RMSNorm Efficiency:** Removing mean-centering reduces memory traffic, speeding up normalization kernels by $\approx 22\%$ in isolation and boosting end-to-end training iteration throughput by $8\%\text{--}12\%$.
-* **SwiGLU Compute Balance:** While SwiGLU introduces a third linear projection ($W_{\text{gate}}$), scaling $d_{\text{ff}}$ from $4.0d$ down to $2.67d$ keeps total GEMM FLOPs identical. The non-linear gating step adds marginal memory overhead that is offset by pairing it with RMSNorm.
+- **LayerNorm Overhead:** Computing $\mu$, subtracting $\mu$, computing $\sigma^2$, and adding $\beta$ introduces additional memory reads and synchronization barriers in CUDA SRAM.
+- **RMSNorm Efficiency:** Removing mean-centering reduces memory traffic, speeding up normalization kernels by $\approx 22\%$ in isolation and boosting end-to-end training iteration throughput by $8\%\text{--}12\%$.
+- **SwiGLU Compute Balance:** While SwiGLU introduces a third linear projection ($W_{\text{gate}}$), scaling $d_{\text{ff}}$ from $4.0d$ down to $2.67d$ keeps total GEMM FLOPs identical. The non-linear gating step adds marginal memory overhead that is offset by pairing it with RMSNorm.
 
 ---
 
@@ -198,8 +198,8 @@ Layer Index (Input -> Output)
 
 ```
 
-* **Post-LN Gradient Distortion:** Gradients in Post-LN accumulate an exponential scale factor as backpropagation traverses successive normalization barriers, causing output layers to update up to $40\times$ faster than input layers in early steps.
-* **Pre-LN Gradient Uniformity:** Gradients flow directly through the unconstrained residual additions ($x_{l+1} = x_l + F(x_l)$), preserving uniform gradient variance from Layer 24 to Layer 1.
+- **Post-LN Gradient Distortion:** Gradients in Post-LN accumulate an exponential scale factor as backpropagation traverses successive normalization barriers, causing output layers to update up to $40\times$ faster than input layers in early steps.
+- **Pre-LN Gradient Uniformity:** Gradients flow directly through the unconstrained residual additions ($x_{l+1} = x_l + F(x_l)$), preserving uniform gradient variance from Layer 24 to Layer 1.
 
 ---
 
@@ -329,7 +329,7 @@ class ExperimentalTransformerBlock(nn.Module):
         # Attention sub-layer
         self.attn = nn.MultiheadAttention(d_model, n_head, batch_first=True)
         self.attn_norm = build_norm(norm_type, d_model)
-        
+
         # Sandwich-LN post-attention norm
         if self.topology == NormTopology.SANDWICH_LN:
             self.attn_sandwich_norm = build_norm(norm_type, d_model)
@@ -413,6 +413,6 @@ class ExperimentalTransformerBlock(nn.Module):
 
 ```
 
-* **Standardize on Pre-LN Topology:** Never use Post-LN for autoregressive decoders with depth $L > 12$. Pre-LN preserves clean identity gradient highways through the residual stream, preventing gradient collapse.
-* **Adopt RMSNorm Universally:** Replace LayerNorm with RMSNorm across all attention and FFN blocks. It reduces memory bandwidth pressure and eliminates bias tensors without degrading representation capacity.
-* **Adopt SwiGLU with $\frac{8}{3} d_{\text{model}}$ Scaling:** Replace standard GELU/ReLU FFNs with SwiGLU. The continuous multi-stream gating mechanism consistently provides superior downstream reasoning scores under strict parameter and compute parity.
+- **Standardize on Pre-LN Topology:** Never use Post-LN for autoregressive decoders with depth $L > 12$. Pre-LN preserves clean identity gradient highways through the residual stream, preventing gradient collapse.
+- **Adopt RMSNorm Universally:** Replace LayerNorm with RMSNorm across all attention and FFN blocks. It reduces memory bandwidth pressure and eliminates bias tensors without degrading representation capacity.
+- **Adopt SwiGLU with $\frac{8}{3} d_{\text{model}}$ Scaling:** Replace standard GELU/ReLU FFNs with SwiGLU. The continuous multi-stream gating mechanism consistently provides superior downstream reasoning scores under strict parameter and compute parity.

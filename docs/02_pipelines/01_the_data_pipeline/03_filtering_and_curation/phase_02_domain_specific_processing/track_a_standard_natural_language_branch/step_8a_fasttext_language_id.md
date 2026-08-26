@@ -64,27 +64,26 @@ A lightweight, pre-trained language identification model (Meta's `lid.176.bin`) 
 
 The system calculates the statistical distribution of recognized languages across the document structure.
 
-* **The Code-Switching Threshold:** If secondary language blocks exceed a critical ratio (e.g., $> 15\%$ of the document's total character length), the pipeline triggers a conditional routing action:
+- **The Code-Switching Threshold:** If secondary language blocks exceed a critical ratio (e.g., $> 15\%$ of the document's total character length), the pipeline triggers a conditional routing action:
 
 $$\text{Secondary Language Ratio} = \frac{\text{CharCount}(\text{Non-Target Language Paragraphs})}{\text{Total Document CharCount}} > 0.15$$
 
-
-* **Regional Quarantine & Seeding:** Documents failing the primary language consistency check are not permanently discarded. Airflow routes the rejected Arrow tables into language-segmented partitions within the enterprise data lake (e.g., quarantine buckets for German or Spanish). This preserved data serves to seed parallel continuous training pipelines specialized for localized regional models.
+- **Regional Quarantine & Seeding:** Documents failing the primary language consistency check are not permanently discarded. Airflow routes the rejected Arrow tables into language-segmented partitions within the enterprise data lake (e.g., quarantine buckets for German or Spanish). This preserved data serves to seed parallel continuous training pipelines specialized for localized regional models.
 
 ---
 
 ## 4. Language Consistency & Quarantine Decision Matrix
 
-| Document Composition Profile | Detection Mechanism | Linguistic Threshold | Pipeline Action | Downstream Architectural Destination |
-| --- | --- | --- | --- | --- |
-| **Monolingual Primary Prose** | Paragraph LID (`lid.176.bin`) | Secondary language ratio $\le 0.15$ | **Retained:** Passes consistency check. | Routed to Phase 3 (Reconvergence & Tokenization). |
-| **Moderate Code-Switching** | Paragraph LID (`lid.176.bin`) | Secondary language ratio $> 0.15$ | **Quarantined:** Fails primary target threshold. | Routed via Airflow to regional data lake partitions (e.g., `/quarantine_es/`). |
-| **Mixed-Language Technical Dump** | Segmented Consensus Engine | Foreign character density $> 15\%$ | **Isolated & Rerouted:** Prevents sub-word fragmentation. | Seed data store for parallel localized continuous training workflows. |
+| Document Composition Profile      | Detection Mechanism           | Linguistic Threshold                | Pipeline Action                                           | Downstream Architectural Destination                                           |
+| --------------------------------- | ----------------------------- | ----------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Monolingual Primary Prose**     | Paragraph LID (`lid.176.bin`) | Secondary language ratio $\le 0.15$ | **Retained:** Passes consistency check.                   | Routed to Phase 3 (Reconvergence & Tokenization).                              |
+| **Moderate Code-Switching**       | Paragraph LID (`lid.176.bin`) | Secondary language ratio $> 0.15$   | **Quarantined:** Fails primary target threshold.          | Routed via Airflow to regional data lake partitions (e.g., `/quarantine_es/`). |
+| **Mixed-Language Technical Dump** | Segmented Consensus Engine    | Foreign character density $> 15\%$  | **Isolated & Rerouted:** Prevents sub-word fragmentation. | Seed data store for parallel localized continuous training workflows.          |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Segmented Consensus Engines:** Multi-stage text analysis utilities that decompose documents into paragraph chunks to prevent global classification masking.
-* **Lightweight Language Identification Models:** C-compiled classification models (such as Meta's `fastText` LID) capable of mapping text strings across 176 languages with minimal CPU overhead.
-* **Orchestrated Quarantine Routing:** Automated workflow hooks (Apache Airflow) that intercept rejected data tables and redirect them to regional storage paths for alternative model training tracks.
+- **Segmented Consensus Engines:** Multi-stage text analysis utilities that decompose documents into paragraph chunks to prevent global classification masking.
+- **Lightweight Language Identification Models:** C-compiled classification models (such as Meta's `fastText` LID) capable of mapping text strings across 176 languages with minimal CPU overhead.
+- **Orchestrated Quarantine Routing:** Automated workflow hooks (Apache Airflow) that intercept rejected data tables and redirect them to regional storage paths for alternative model training tracks.

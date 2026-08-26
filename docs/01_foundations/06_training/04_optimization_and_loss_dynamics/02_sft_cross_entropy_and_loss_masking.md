@@ -129,10 +129,10 @@ Topology B: Sample-Averaged (Normalized) Loss
 
 ### Mathematical Comparison
 
-| Normalization Scheme | Formula | Behavioral Bias | Optimal Use Case |
-| --- | --- | --- | --- |
-| **Token-Averaged** | $\frac{\sum_b \sum_t \ell_{b, t}}{\sum_b N_b}$ | Biased toward long responses (more tokens = more weight) | Pre-training, standard sequence packing |
-| **Sample-Averaged** | $\frac{1}{B} \sum_b \left( \frac{1}{N_b} \sum_t \ell_{b, t} \right)$ | Uniform weighting per instruction | Instruction tuning, reasoning, multi-task SFT |
+| Normalization Scheme | Formula                                                              | Behavioral Bias                                          | Optimal Use Case                              |
+| -------------------- | -------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------- |
+| **Token-Averaged**   | $\frac{\sum_b \sum_t \ell_{b, t}}{\sum_b N_b}$                       | Biased toward long responses (more tokens = more weight) | Pre-training, standard sequence packing       |
+| **Sample-Averaged**  | $\frac{1}{B} \sum_b \left( \frac{1}{N_b} \sum_t \ell_{b, t} \right)$ | Uniform weighting per instruction                        | Instruction tuning, reasoning, multi-task SFT |
 
 ---
 
@@ -177,7 +177,7 @@ class SFTLossEngine(nn.Module):
             # Flatten tensors across batch and sequence dimensions
             flat_logits = shift_logits.view(-1, V)
             flat_labels = shift_labels.view(-1)
-            
+
             # Standard PyTorch Cross-Entropy with ignore_index
             loss = F.cross_entropy(
                 flat_logits,
@@ -189,7 +189,7 @@ class SFTLossEngine(nn.Module):
             # Sample-averaged loss: compute per-token NLL without reduction
             flat_logits = shift_logits.view(-1, V)
             flat_labels = shift_labels.view(-1)
-            
+
             per_token_loss = F.cross_entropy(
                 flat_logits,
                 flat_labels,
@@ -249,13 +249,11 @@ Monitoring SFT convergence requires isolating metrics to active target tokens:
 
 ### Common Failure Modes and Root Causes
 
-* **The Infinite Generation Bug:** The model generates high-quality responses during inference but fails to terminate, outputting random tokens until hitting `max_tokens`.
-* *Root Cause:* The closing delimiter (`<|im_end|>` or `</s>`) was masked with `-100` during training, preventing the model from receiving gradients on the sequence termination signal.
+- **The Infinite Generation Bug:** The model generates high-quality responses during inference but fails to terminate, outputting random tokens until hitting `max_tokens`.
+- _Root Cause:_ The closing delimiter (`<|im_end|>` or `</s>`) was masked with `-100` during training, preventing the model from receiving gradients on the sequence termination signal.
 
+- **Loss Evaluates to `NaN`:** During early training steps, the batch loss immediately crashes to `NaN`.
+- _Root Cause:_ A batch containing entirely empty assistant responses was ingested, resulting in $\sum M_t = 0$. The cross-entropy denominator becomes zero. Always guard dynamic collation with `clamp(min=1.0)` or Gate 4 assertions.
 
-* **Loss Evaluates to `NaN`:** During early training steps, the batch loss immediately crashes to `NaN`.
-* *Root Cause:* A batch containing entirely empty assistant responses was ingested, resulting in $\sum M_t = 0$. The cross-entropy denominator becomes zero. Always guard dynamic collation with `clamp(min=1.0)` or Gate 4 assertions.
-
-
-* **Prompt Echoing:** The model repeats user questions verbatim during inference before answering.
-* *Root Cause:* System and user prompts were included in the cross-entropy target mask ($M_{\text{prompt}} = 1$), teaching the model autoregressively to reconstruct the prompt.
+- **Prompt Echoing:** The model repeats user questions verbatim during inference before answering.
+- _Root Cause:_ System and user prompts were included in the cross-entropy target mask ($M_{\text{prompt}} = 1$), teaching the model autoregressively to reconstruct the prompt.

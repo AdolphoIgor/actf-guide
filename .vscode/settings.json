@@ -1,0 +1,17 @@
+{
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "explicit"
+    },
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "on",
+      "strings": "on",
+      "other": "on"
+    }
+  },
+  "markdownlint.configFile": ".markdownlint.json",
+  "prettier.documentSelectors": ["**/*.md", "**/*.yml", "**/*.json"]
+}

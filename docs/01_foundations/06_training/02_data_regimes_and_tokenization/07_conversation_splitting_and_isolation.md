@@ -2,7 +2,7 @@
 
 ## 1. The Intra-Dialogue Leakage Vulnerability
 
-In production language model training, data splitting cannot be treated as a simple tensor-slicing operation. A fundamental failure mode in continuous training pipelines is **intra-dialogue data leakage**, which occurs when a dataset is partitioned *after* text concatenation or sequence packing, rather than at strict document and conversation boundaries.
+In production language model training, data splitting cannot be treated as a simple tensor-slicing operation. A fundamental failure mode in continuous training pipelines is **intra-dialogue data leakage**, which occurs when a dataset is partitioned _after_ text concatenation or sequence packing, rather than at strict document and conversation boundaries.
 
 ```text
 INCORRECT: Slicing After Sequence Packing (Severe Data Leakage)
@@ -85,11 +85,11 @@ Because the output of SHA-256 is uniformly distributed across the hash space, th
 
 Every partitioned dataset in the ACTF framework fulfills a distinct role across the training and evaluation lifecycle:
 
-| Dataset Partition | Target Split Ratio | Ingestion Stage | Primary Operational Role | Gradient Updates |
-| --- | --- | --- | --- | --- |
-| **Train Set** | **$90\%\text{--}95\%$** | JIT Step 12 Packing | Parameter optimization via forward/backward backpropagation loops. | **Active** ($\nabla \theta \ne 0$) |
-| **Validation Set** | **$5\%$** | JIT Step 12 Packing | Periodic loss tracking (`estimate_loss`), early stopping triggers, and LR decay monitoring. | **Disabled** (`@torch.no_grad()`) |
-| **Test Set (Holdout)** | **$5\%$** | Isolated Gold Storage | Post-training Gate 5 Gatekeeper benchmark; regression testing against production baseline. | **Disabled** (`eval` mode) |
+| Dataset Partition      | Target Split Ratio      | Ingestion Stage       | Primary Operational Role                                                                    | Gradient Updates                   |
+| ---------------------- | ----------------------- | --------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------- |
+| **Train Set**          | **$90\%\text{--}95\%$** | JIT Step 12 Packing   | Parameter optimization via forward/backward backpropagation loops.                          | **Active** ($\nabla \theta \ne 0$) |
+| **Validation Set**     | **$5\%$**               | JIT Step 12 Packing   | Periodic loss tracking (`estimate_loss`), early stopping triggers, and LR decay monitoring. | **Disabled** (`@torch.no_grad()`)  |
+| **Test Set (Holdout)** | **$5\%$**               | Isolated Gold Storage | Post-training Gate 5 Gatekeeper benchmark; regression testing against production baseline.  | **Disabled** (`eval` mode)         |
 
 ### The Holdout Isolation Rule
 

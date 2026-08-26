@@ -92,14 +92,14 @@ In multi-turn instruction tuning, full-batch wrappers frequently average losses 
 
 ## 4. Architectural Comparison Matrix
 
-| Architectural Feature | High-Level Wrapper (Trainer) | Zero-Framework Modular PyTorch |
-| --- | --- | --- |
-| **Control Flow** | Inverted (Framework controls loop via hooks) | **Direct (Imperative, explicit Python execution)** |
-| **Memory Allocation** | Hidden caching and buffer management | **Deterministic (Explicit tensor lifecycles)** |
-| **Gradient Accumulation** | Config-driven; variable DDP sync control | **Explicit `model.no_sync()` handling** |
-| **Debugging Accessibility** | Deep nested stack traces across abstractions | **Single-file traceback directly to raw PyTorch math** |
-| **Custom Kernel Dispatch** | Requires custom wrapper plugins | **Native (`torch.compile`, SDPA, fused kernels)** |
-| **State Inspection** | Opaque checkpoint dictionary structures | **Explicit dictionary schemas matching hardware specs** |
+| Architectural Feature       | High-Level Wrapper (Trainer)                 | Zero-Framework Modular PyTorch                          |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------------- |
+| **Control Flow**            | Inverted (Framework controls loop via hooks) | **Direct (Imperative, explicit Python execution)**      |
+| **Memory Allocation**       | Hidden caching and buffer management         | **Deterministic (Explicit tensor lifecycles)**          |
+| **Gradient Accumulation**   | Config-driven; variable DDP sync control     | **Explicit `model.no_sync()` handling**                 |
+| **Debugging Accessibility** | Deep nested stack traces across abstractions | **Single-file traceback directly to raw PyTorch math**  |
+| **Custom Kernel Dispatch**  | Requires custom wrapper plugins              | **Native (`torch.compile`, SDPA, fused kernels)**       |
+| **State Inspection**        | Opaque checkpoint dictionary structures      | **Explicit dictionary schemas matching hardware specs** |
 
 ---
 
@@ -250,7 +250,7 @@ class StepRunner:
     ) -> Dict[str, float]:
         self.model.train()
         self.optimizer.zero_grad(set_to_none=True)
-        
+
         accum_loss = 0.0
         total_active_tokens = 0
 
@@ -315,7 +315,7 @@ def configure_selective_optimizer(model: nn.Module, cfg: TrainingConfig) -> torc
 def execute_training_cycle():
     """Demonstrates standalone execution of the zero-framework pipeline."""
     cfg = TrainingConfig(block_size=64, n_embd=64, n_layer=2, n_head=2, grad_accum_steps=2)
-    
+
     # 1. Instantiate modular components
     model = ModularTransformerLM(cfg).to(cfg.device)
     loss_engine = SFTLossEngine(ignore_index=-100)

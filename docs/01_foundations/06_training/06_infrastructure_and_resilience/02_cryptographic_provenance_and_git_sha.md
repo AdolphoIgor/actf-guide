@@ -54,23 +54,22 @@ Complete artifact reproducibility depends on three immutable lineage vectors:
 
 ### 1. Code Provenance (Git SHA + Tree State)
 
-* **Git Commit SHA:** The 40-character hexadecimal SHA-1/SHA-256 hash identifying the exact repository commit.
-* **Dirty Working Tree Policy:** Running training on uncommitted local modifications destroys reproducibility. A production orchestrator must either:
+- **Git Commit SHA:** The 40-character hexadecimal SHA-1/SHA-256 hash identifying the exact repository commit.
+- **Dirty Working Tree Policy:** Running training on uncommitted local modifications destroys reproducibility. A production orchestrator must either:
+
 1. Enforce a clean working tree assertion (`git diff-index --quiet HEAD`).
 2. Generate and serialize a unified git patch (`git diff HEAD`) directly into the checkpoint metadata envelope.
 
-
-
 ### 2. Data Provenance (Dataset Merkle Hash)
 
-* **Dataset Manifest Digest:** A cryptographic hash computed over the exact sequence of training shards.
-* **Tokenizer Fingerprint:** SHA-256 hash of the tokenizer vocabulary and merge configuration (`vocab.json`, `merges.txt`, or `tokenizer.json`).
+- **Dataset Manifest Digest:** A cryptographic hash computed over the exact sequence of training shards.
+- **Tokenizer Fingerprint:** SHA-256 hash of the tokenizer vocabulary and merge configuration (`vocab.json`, `merges.txt`, or `tokenizer.json`).
 
 ### 3. Runtime & Hardware Environment
 
-* **Dependency Manifest:** Hash of the locked dependency graph (`uv.lock`, `poetry.lock`, or pinned `requirements.txt`).
-* **Hardware & Toolchain Metadata:** CUDA runtime version, cuDNN version, NVIDIA driver revision, GPU microarchitecture (e.g., Hopper H100 SXM5), and PyTorch build commit.
-* **Deterministic Seeds:** Base global pseudorandom number generator (PRNG) seeds for Python `random`, `numpy`, and `torch`.
+- **Dependency Manifest:** Hash of the locked dependency graph (`uv.lock`, `poetry.lock`, or pinned `requirements.txt`).
+- **Hardware & Toolchain Metadata:** CUDA runtime version, cuDNN version, NVIDIA driver revision, GPU microarchitecture (e.g., Hopper H100 SXM5), and PyTorch build commit.
+- **Deterministic Seeds:** Base global pseudorandom number generator (PRNG) seeds for Python `random`, `numpy`, and `torch`.
 
 ---
 
@@ -146,7 +145,6 @@ When saving model state, metadata is stored in a structured JSON schema embedded
     "weight_decay": 0.1
   }
 }
-
 ```
 
 ---
@@ -349,9 +347,9 @@ class ProvenanceEngine:
 
 ### Verification Rules
 
-| Audit Target | Evaluation Rule | Failure Action |
-| --- | --- | --- |
-| **Git Working Tree** | `is_dirty == False` (Strict Mode) | Terminate training job before GPU allocation |
-| **Dataset Merkle Hash** | Hash matches approved dataset registry manifest | Reject data ingestion; raise DataIntegrityError |
-| **Tokenizer Hash** | Hash matches reference tokenizer build | Abort; prevents token ID vocabulary misalignment |
-| **Envelope Completeness** | Checkpoint contains all required metadata keys | Reject promotion to production serving registry |
+| Audit Target              | Evaluation Rule                                 | Failure Action                                   |
+| ------------------------- | ----------------------------------------------- | ------------------------------------------------ |
+| **Git Working Tree**      | `is_dirty == False` (Strict Mode)               | Terminate training job before GPU allocation     |
+| **Dataset Merkle Hash**   | Hash matches approved dataset registry manifest | Reject data ingestion; raise DataIntegrityError  |
+| **Tokenizer Hash**        | Hash matches reference tokenizer build          | Abort; prevents token ID vocabulary misalignment |
+| **Envelope Completeness** | Checkpoint contains all required metadata keys  | Reject promotion to production serving registry  |

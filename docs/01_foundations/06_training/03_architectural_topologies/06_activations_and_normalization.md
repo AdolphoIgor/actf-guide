@@ -47,9 +47,9 @@ $$\text{LN}(x) = \frac{x - \mu}{\sqrt{\sigma^2 + \epsilon}} \odot \gamma + \beta
 
 Where:
 
-* $\gamma \in \mathbb{R}^d$ is a learnable gain vector initialized to $1$.
-* $\beta \in \mathbb{R}^d$ is a learnable bias vector initialized to $0$.
-* $\epsilon$ is a small scalar constant (e.g., $10^{-5}$ or $10^{-6}$) to prevent division by zero.
+- $\gamma \in \mathbb{R}^d$ is a learnable gain vector initialized to $1$.
+- $\beta \in \mathbb{R}^d$ is a learnable bias vector initialized to $0$.
+- $\epsilon$ is a small scalar constant (e.g., $10^{-5}$ or $10^{-6}$) to prevent division by zero.
 
 ### B. Root Mean Square Normalization (RMSNorm)
 
@@ -61,9 +61,9 @@ $$\text{RMSNorm}(x) = \frac{x}{\text{RMS}(x)} \odot \gamma$$
 
 ### Computational Advantages of RMSNorm
 
-* **7% to 15% Faster Kernel Execution:** Eliminating the calculation of $\mu$ and the subsequent subtraction pass reduces memory reads and synchronization barriers in GPU SRAM.
-* **Parameter Reduction:** Removing the learnable bias parameter $\beta$ saves $d_{\text{model}}$ parameters per normalization layer.
-* **Modern Adoption:** RMSNorm is the universal standard in contemporary architectures, including LLaMA-3, Qwen-2.5, Mistral, and Gemma.
+- **7% to 15% Faster Kernel Execution:** Eliminating the calculation of $\mu$ and the subsequent subtraction pass reduces memory reads and synchronization barriers in GPU SRAM.
+- **Parameter Reduction:** Removing the learnable bias parameter $\beta$ saves $d_{\text{model}}$ parameters per normalization layer.
+- **Modern Adoption:** RMSNorm is the universal standard in contemporary architectures, including LLaMA-3, Qwen-2.5, Mistral, and Gemma.
 
 ---
 
@@ -109,7 +109,7 @@ f(x) = max(0, x)         f(x) = x * Phi(x)        f(x) = x * sigma(x)      f(x, 
 
 $$\text{ReLU}(z) = \max(0, z)$$
 
-* **Limitation:** For negative inputs ($z < 0$), the gradient evaluates to exactly $0.0$. If a neuron's weights shift such that it receives negative activations across the dataset, it enters the **"Dead ReLU"** regime and permanently stops updating.
+- **Limitation:** For negative inputs ($z < 0$), the gradient evaluates to exactly $0.0$. If a neuron's weights shift such that it receives negative activations across the dataset, it enters the **"Dead ReLU"** regime and permanently stops updating.
 
 ### B. Gaussian Error Linear Unit (GELU)
 
@@ -117,12 +117,10 @@ $$\text{GELU}(z) = z \cdot \Phi(z) = z \cdot \frac{1}{2} \left[ 1 + \text{erf}\l
 
 GELU scales inputs by the cumulative distribution function of the standard normal distribution $\Phi(z)$.
 
-* **Smooth Probabilistic Gating:** Instead of gating strictly by sign, GELU provides a continuous, differentiable curve where small negative inputs retain small negative gradients, preventing gradient starvation.
-* **Fast Approximation:**
+- **Smooth Probabilistic Gating:** Instead of gating strictly by sign, GELU provides a continuous, differentiable curve where small negative inputs retain small negative gradients, preventing gradient starvation.
+- **Fast Approximation:**
 
 $$\text{GELU}(z) \approx 0.5z \left( 1 + \tanh\left( \sqrt{\frac{2}{\pi}} \left( z + 0.044715 z^3 \right) \right) \right)$$
-
-
 
 ### C. Gated Linear Units: SwiGLU
 
@@ -134,10 +132,10 @@ $$\text{SwiGLU}(x) = \Big( \text{SiLU}(x W_{\text{gate}}) \odot (x W_{\text{up}}
 
 Where:
 
-* $W_{\text{gate}} \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$ computes a continuous gating filter.
-* $W_{\text{up}} \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$ computes the un-gated signal representation.
-* $\odot$ represents element-wise Hadamard multiplication.
-* $W_{\text{down}} \in \mathbb{R}^{d_{\text{ff}} \times d_{\text{model}}}$ projects the gated representation back to the residual stream.
+- $W_{\text{gate}} \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$ computes a continuous gating filter.
+- $W_{\text{up}} \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$ computes the un-gated signal representation.
+- $\odot$ represents element-wise Hadamard multiplication.
+- $W_{\text{down}} \in \mathbb{R}^{d_{\text{ff}} \times d_{\text{model}}}$ projects the gated representation back to the residual stream.
 
 ### Parameter Parity Scaling for SwiGLU
 
@@ -153,14 +151,14 @@ $$\text{SwiGLU Parameters} = 3 \times \left( d_{\text{model}} \times \frac{8}{3}
 
 ## 5. Architectural Comparison Matrix
 
-| Component | Standard Baseline (GPT-2) | Intermediate Modern (BERT/T5) | State-of-the-Art (LLaMA-3, Qwen-2.5) |
-| --- | --- | --- | --- |
-| **Normalization Type** | LayerNorm (with Mean & Bias) | LayerNorm / T5 RMSNorm | **RMSNorm (No Bias, Zero-Mean)** |
-| **Normalization Topology** | Pre-LN | Post-LN (BERT) / Pre-LN (T5) | **Pre-LN + Final RMSNorm Head (`ln_f`)** |
-| **Activation Function** | GELU (Tanh Approximation) | GELU (Exact) / ReLU | **SwiGLU ($\text{SiLU}(x W_{\text{gate}}) \odot x W_{\text{up}}$)** |
-| **FFN Hidden Multiplier** | $4 \times d_{\text{model}}$ | $4 \times d_{\text{model}}$ | **$\frac{8}{3} \times d_{\text{model}}$ (Rounded to multiple of 64/256)** |
-| **FFN Weight Matrices** | 2 ($W_1, W_2$) | 2 ($W_1, W_2$) | **3 ($W_{\text{gate}}, W_{\text{up}}, W_{\text{down}}$)** |
-| **Bias Vectors** | Enabled across all layers | Enabled across all layers | **Zero Biases (`bias=False` everywhere)** |
+| Component                  | Standard Baseline (GPT-2)    | Intermediate Modern (BERT/T5) | State-of-the-Art (LLaMA-3, Qwen-2.5)                                      |
+| -------------------------- | ---------------------------- | ----------------------------- | ------------------------------------------------------------------------- |
+| **Normalization Type**     | LayerNorm (with Mean & Bias) | LayerNorm / T5 RMSNorm        | **RMSNorm (No Bias, Zero-Mean)**                                          |
+| **Normalization Topology** | Pre-LN                       | Post-LN (BERT) / Pre-LN (T5)  | **Pre-LN + Final RMSNorm Head (`ln_f`)**                                  |
+| **Activation Function**    | GELU (Tanh Approximation)    | GELU (Exact) / ReLU           | **SwiGLU ($\text{SiLU}(x W_{\text{gate}}) \odot x W_{\text{up}}$)**       |
+| **FFN Hidden Multiplier**  | $4 \times d_{\text{model}}$  | $4 \times d_{\text{model}}$   | **$\frac{8}{3} \times d_{\text{model}}$ (Rounded to multiple of 64/256)** |
+| **FFN Weight Matrices**    | 2 ($W_1, W_2$)               | 2 ($W_1, W_2$)                | **3 ($W_{\text{gate}}, W_{\text{up}}, W_{\text{down}}$)**                 |
+| **Bias Vectors**           | Enabled across all layers    | Enabled across all layers     | **Zero Biases (`bias=False` everywhere)**                                 |
 
 ---
 
@@ -230,8 +228,8 @@ class ModernTransformerBlock(nn.Module):
         # Residual Highway 1: Attention
         normed_x = self.attn_norm(x)
         attn_out, _ = self.attn(
-            normed_x, normed_x, normed_x, 
-            is_causal=is_causal, 
+            normed_x, normed_x, normed_x,
+            is_causal=is_causal,
             need_weights=False
         )
         x = x + attn_out
@@ -246,6 +244,6 @@ class ModernTransformerBlock(nn.Module):
 
 ## 7. Numerical Stability Guardrails
 
-* **Epsilon Tuning in Low Precision:** When training in BF16 or FP16, setting $\epsilon \le 10^{-12}$ risks numerical underflow during variance division. Maintain $\epsilon \in [10^{-5}, 10^{-6}]$ to prevent division-by-zero runtime exceptions.
-* **RMSNorm Upcasting:** When computing `x.pow(2).mean(-1)` in low-precision FP16, high-magnitude activation vectors can overflow to $\infty$. PyTorch implementations should cast input tensors to `torch.float32` prior to calculating the root mean square, downcasting back to the native model dtype only after scaling is complete.
-* **Zero-Bias Stabilization:** Disabling biases across linear projections (`bias=False`) saves memory and eliminates additive drift in deep residual networks, preventing gradient saturation during long training regimes.
+- **Epsilon Tuning in Low Precision:** When training in BF16 or FP16, setting $\epsilon \le 10^{-12}$ risks numerical underflow during variance division. Maintain $\epsilon \in [10^{-5}, 10^{-6}]$ to prevent division-by-zero runtime exceptions.
+- **RMSNorm Upcasting:** When computing `x.pow(2).mean(-1)` in low-precision FP16, high-magnitude activation vectors can overflow to $\infty$. PyTorch implementations should cast input tensors to `torch.float32` prior to calculating the root mean square, downcasting back to the native model dtype only after scaling is complete.
+- **Zero-Bias Stabilization:** Disabling biases across linear projections (`bias=False`) saves memory and eliminates additive drift in deep residual networks, preventing gradient saturation during long training regimes.

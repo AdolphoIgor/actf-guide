@@ -102,7 +102,7 @@ If the judge selects Candidate 1 in both trials, the result is flagged as positi
 
 ### 2. Chain-of-Thought (CoT) Rubric Anchoring
 
-LLMs exhibit higher scoring calibration when forced to generate a structured critique *before* emitting numerical scores or categorical decisions. Instructing the judge to justify deductions against specific criteria bounds the final rating to verifiable observations.
+LLMs exhibit higher scoring calibration when forced to generate a structured critique _before_ emitting numerical scores or categorical decisions. Instructing the judge to justify deductions against specific criteria bounds the final rating to verifiable observations.
 
 ```text
 Ineffective Zero-Shot Scoring:
@@ -164,8 +164,8 @@ $$\kappa = \frac{P_o - P_e}{1 - P_e}$$
 
 Where:
 
-* $P_o$ is the relative observed agreement between the LLM judge and human experts.
-* $P_e$ is the hypothetical probability of chance agreement:
+- $P_o$ is the relative observed agreement between the LLM judge and human experts.
+- $P_e$ is the hypothetical probability of chance agreement:
 
 $$P_e = \sum_{k=1}^C P(\text{Judge} = k) \cdot P(\text{Human} = k)$$
 
@@ -198,7 +198,7 @@ Where $K$ is the rating volatility factor (typically $K = 32$).
 
 Below is the standalone implementation of a robust LLM Judge engine featuring structured JSON schema enforcement, bidirectional order swapping, position-bias detection, and Elo rating updates:
 
-```python
+````python
 import json
 import math
 import re
@@ -369,7 +369,7 @@ class EloRatingSystem:
         self.ratings[model_a] = r_a + self.k * (score_a - exp_a)
         self.ratings[model_b] = r_b + self.k * (score_b - exp_b)
 
-```
+````
 
 ---
 

@@ -55,39 +55,32 @@ Gate 1 executes a three-tiered inspection suite on every incoming raw dataset ba
 
 ### 1. Physical File Integrity & Magic Byte Verification
 
-* **Magic Byte Validation:** Reads the initial and trailing bytes of each raw file to verify physical encoding integrity without parsing the entire payload:
-* **Apache Parquet:** Validates the 4-byte magic number `PAR1` at both the start and end of the file buffer.
-* **Compressed JSONL (GZIP / Zstandard):** Validates header flags (`0x1F 0x8B` for GZIP; `0x28 0xB5 0x2F 0xFD` for Zstandard).
+- **Magic Byte Validation:** Reads the initial and trailing bytes of each raw file to verify physical encoding integrity without parsing the entire payload:
+- **Apache Parquet:** Validates the 4-byte magic number `PAR1` at both the start and end of the file buffer.
+- **Compressed JSONL (GZIP / Zstandard):** Validates header flags (`0x1F 0x8B` for GZIP; `0x28 0xB5 0x2F 0xFD` for Zstandard).
 
-
-* **Cryptographic Checksum Verification:** Cross-references file hashes against upstream extraction manifests:
+- **Cryptographic Checksum Verification:** Cross-references file hashes against upstream extraction manifests:
 
 $$\text{ChecksumMatch} = \left( \text{CRC32}_{\text{computed}}(\text{File}) == \text{CRC32}_{\text{manifest}} \right)$$
 
-
-
 ### 2. Schema Structure & Type Conformance
 
-* **Schema Contract Assertion:** Uses the `pyarrow.dataset` metadata API to inspect schema definitions against the immutable Bronze Contract:
-* Mandatory existence of required columns: `doc_id` (string/int64), `raw_text` (string/large_string), `source_type` (string), and `ingestion_timestamp` (timestamp[ns]).
-* Rejection of unexpected nullability flags on identity keys.
+- **Schema Contract Assertion:** Uses the `pyarrow.dataset` metadata API to inspect schema definitions against the immutable Bronze Contract:
+- Mandatory existence of required columns: `doc_id` (string/int64), `raw_text` (string/large_string), `source_type` (string), and `ingestion_timestamp` (timestamp[ns]).
+- Rejection of unexpected nullability flags on identity keys.
 
-
-* **Metadata Integrity:** Validates that `pyarrow.KeyValueMetadata` headers contain valid lineage tags (`source_uri`, `extraction_dag_id`, `producer_version`).
+- **Metadata Integrity:** Validates that `pyarrow.KeyValueMetadata` headers contain valid lineage tags (`source_uri`, `extraction_dag_id`, `producer_version`).
 
 ### 3. Volumetric Baselines & Anomaly Bounds
 
-* **Minimum Record Count Threshold:** Asserts that incoming batches contain sufficient row volume to justify a curation run:
+- **Minimum Record Count Threshold:** Asserts that incoming batches contain sufficient row volume to justify a curation run:
 
 $$N_{\text{records}} \ge N_{\text{min}}$$
 
-
-* **File Size Boundary Checks:** Enforces lower and upper file size bounds ($S_{\text{file}} \in [S_{\text{min}}, S_{\text{max}}]$) to catch zero-byte drops or abnormally massive uncompressed memory bombs.
-* **Volume Variance Anomaly Detection:** Compares the batch size against historical moving averages to detect abnormal drop-offs:
+- **File Size Boundary Checks:** Enforces lower and upper file size bounds ($S_{\text{file}} \in [S_{\text{min}}, S_{\text{max}}]$) to catch zero-byte drops or abnormally massive uncompressed memory bombs.
+- **Volume Variance Anomaly Detection:** Compares the batch size against historical moving averages to detect abnormal drop-offs:
 
 $$\vert{}N_{\text{current}} - \mu_{\text{historical}}\vert{} \le 3\sigma_{\text{historical}}$$
-
-
 
 ---
 
@@ -99,22 +92,22 @@ $$\text{Pass}_{\text{Gate 1}} \iff \left( \mathcal{I}_{\text{magic}}(\mathcal{D}
 
 Where:
 
-* $\mathcal{I}_{\text{magic}}(\mathcal{D})$ represents binary header/footer validation.
-* $\mathcal{C}_{\text{hash}}(\mathcal{D})$ represents checksum manifest parity.
-* $\mathcal{S}_{\text{conformance}}(\mathcal{D})$ represents Apache Arrow schema type validation.
-* $\mathcal{V}_{\text{volumetrics}}(\mathcal{D})$ represents row-count and file-size threshold satisfaction.
+- $\mathcal{I}_{\text{magic}}(\mathcal{D})$ represents binary header/footer validation.
+- $\mathcal{C}_{\text{hash}}(\mathcal{D})$ represents checksum manifest parity.
+- $\mathcal{S}_{\text{conformance}}(\mathcal{D})$ represents Apache Arrow schema type validation.
+- $\mathcal{V}_{\text{volumetrics}}(\mathcal{D})$ represents row-count and file-size threshold satisfaction.
 
 ---
 
 ## 5. Inspection Matrix: Gating Checks & Failure Modes
 
-| Inspection Target | Verification Tool / Kernel | Gating Assertion Criteria | Failure Mode Trapped | Circuit Breaker Action |
-| --- | --- | --- | --- | --- |
-| **Magic Bytes** | C++ Binary Stream Reader | Valid file signatures (`PAR1`, `0x1F8B`) | Corrupted or truncated network transfers | **Abort:** Halts DAG immediately; quarantines file. |
-| **Checksum Parity** | Vectorized CRC32 / SHA-256 | Hash matches extraction manifest | Bit rot or partial disk write | **Abort:** Re-triggers ingestion or alerts data team. |
-| **Schema Structure** | `pyarrow.Schema` Inspector | Column presence and strict type alignment | Upstream schema drift or renamed fields | **Abort:** Blocks downstream typing exceptions. |
-| **Record Volume** | Arrow Table Metadata | $N_{\text{rows}} \ge N_{\text{min}}$ | Empty query extractions or source outages | **Halt:** Silently skips compute or fires low-priority alert. |
-| **Size Distribution** | OS Virtual Filesystem Stat | $S_{\text{bytes}} \in [S_{\text{min}}, S_{\text{max}}]$ | Zero-byte files or memory bombs | **Abort:** Prevents worker OOM crashes. |
+| Inspection Target     | Verification Tool / Kernel | Gating Assertion Criteria                               | Failure Mode Trapped                      | Circuit Breaker Action                                        |
+| --------------------- | -------------------------- | ------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
+| **Magic Bytes**       | C++ Binary Stream Reader   | Valid file signatures (`PAR1`, `0x1F8B`)                | Corrupted or truncated network transfers  | **Abort:** Halts DAG immediately; quarantines file.           |
+| **Checksum Parity**   | Vectorized CRC32 / SHA-256 | Hash matches extraction manifest                        | Bit rot or partial disk write             | **Abort:** Re-triggers ingestion or alerts data team.         |
+| **Schema Structure**  | `pyarrow.Schema` Inspector | Column presence and strict type alignment               | Upstream schema drift or renamed fields   | **Abort:** Blocks downstream typing exceptions.               |
+| **Record Volume**     | Arrow Table Metadata       | $N_{\text{rows}} \ge N_{\text{min}}$                    | Empty query extractions or source outages | **Halt:** Silently skips compute or fires low-priority alert. |
+| **Size Distribution** | OS Virtual Filesystem Stat | $S_{\text{bytes}} \in [S_{\text{min}}, S_{\text{max}}]$ | Zero-byte files or memory bombs           | **Abort:** Prevents worker OOM crashes.                       |
 
 ---
 
@@ -124,11 +117,11 @@ If any verification check within Gate 1 fails, the system executes an automated 
 
 1. **Immediate Execution Termination:** The Airflow task execution context raises an immediate `IngestionGateAssertionError`, terminating the DAG execution branch before any downstream nodes (Ray / Spark) are invoked.
 2. **Partition Quarantine:** The invalid file or data partition is moved to an isolated directory path:
+
 ```text
 s3://company-ai-datalake/bronze/_quarantine/year=2026/month=08/error_id=invalid_magic_bytes/
 
 ```
 
-
-3. **Telemetry & Diagnostic Dispatch:** Dispatches an automated incident payload to the data engineering monitoring channel (containing error logs, corrupted byte headers, and source ingestion metadata).
-4. **Immutability Protection:** The Bronze landing partition remains write-locked; no downstream Silver or Gold partitions are created, preventing corrupt lineage tracking.
+1. **Telemetry & Diagnostic Dispatch:** Dispatches an automated incident payload to the data engineering monitoring channel (containing error logs, corrupted byte headers, and source ingestion metadata).
+2. **Immutability Protection:** The Bronze landing partition remains write-locked; no downstream Silver or Gold partitions are created, preventing corrupt lineage tracking.

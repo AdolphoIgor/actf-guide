@@ -80,8 +80,8 @@ $$\text{Loss Tolerance Interval: } \mathcal{L}_0 \in \left[ \ln(V) - \epsilon_{\
 
 Where $\epsilon_{\text{loss}} \approx 0.5 \text{ nats}$.
 
-* **If $\mathcal{L}_0 \gg \ln(V)$:** Output logits are excessively biased toward incorrect tokens or initialized with excessive variance, causing immediate gradient spikes.
-* **If $\mathcal{L}_0 \ll \ln(V)$ (e.g., $\mathcal{L}_0 < 2.0$ on an untrained model):** Target labels are leaking directly into input embeddings, or loss masking is erroneously skipping active target positions.
+- **If $\mathcal{L}_0 \gg \ln(V)$:** Output logits are excessively biased toward incorrect tokens or initialized with excessive variance, causing immediate gradient spikes.
+- **If $\mathcal{L}_0 \ll \ln(V)$ (e.g., $\mathcal{L}_0 < 2.0$ on an untrained model):** Target labels are leaking directly into input embeddings, or loss masking is erroneously skipping active target positions.
 
 ---
 
@@ -379,7 +379,7 @@ class PreflightTensorGateEngine:
             logits = self.model(sample_inputs)
             if isinstance(logits, tuple):
                 logits = logits[0]
-            
+
             shift_logits = logits[..., :-1, :].contiguous().view(-1, self.vocab_size)
             shift_labels = sample_targets[..., 1:].contiguous().view(-1)
             loss = F.cross_entropy(shift_logits, shift_labels, ignore_index=self.ignore_index)
@@ -505,7 +505,7 @@ class PreflightTensorGateEngine:
         Executes complete Gate 4 battery and returns structured verification receipt.
         """
         inputs, targets = sample_batch
-        
+
         weight_metrics = self.audit_initial_weights(check_tied_embeddings=check_tied)
         opt_metrics = self.audit_optimizer_parameter_groups(optimizer)
         forward_metrics = self.audit_forward_and_loss(inputs, targets)
@@ -531,12 +531,12 @@ class PreflightTensorGateEngine:
 
 ## 6. Pre-Flight Diagnostic Failure Matrix
 
-| Failure Symptom | Detection Point | Root Cause | Engineering Remediation |
-| --- | --- | --- | --- |
-| **$\mathcal{L}_0 \ll \ln(V)$** ($\mathcal{L}_0 < 2.0$) | Step-0 Loss Evaluation | Target labels unshifted; prompt unmasked | Ensure causal token shift ($t$ predicts $t+1$); verify loss masking |
+| Failure Symptom                                         | Detection Point        | Root Cause                                       | Engineering Remediation                                                            |
+| ------------------------------------------------------- | ---------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| **$\mathcal{L}_0 \ll \ln(V)$** ($\mathcal{L}_0 < 2.0$)  | Step-0 Loss Evaluation | Target labels unshifted; prompt unmasked         | Ensure causal token shift ($t$ predicts $t+1$); verify loss masking                |
 | **$\mathcal{L}_0 \gg \ln(V)$** ($\mathcal{L}_0 > 12.0$) | Step-0 Loss Evaluation | Logit scaling factor missing; bad initialization | Verify $\frac{1}{\sqrt{d_k}}$ attention scale; re-calibrate $\sigma_{\text{init}}$ |
-| **$\text{max}(\vert{}z_0\vert{}) > 25.0$** | Forward Logit Audit | Unscaled output projection weights | Clamp linear head initialization; check final RMSNorm / LayerNorm |
-| **`param.grad is None`** | Autograd Flow Audit | Submodule detached (`.detach()` / broken graph) | Trace residual additions; ensure forward returns tensor connected to loss |
-| **`data_ptr` Mismatch** | Tied Embedding Audit | Weights decoupled via `.clone()` | Bind references directly: `self.lm_head.weight = self.tok_emb.weight` |
-| **Optimizer Group Overlap** | Param Group Audit | Parameter listed in decay and no-decay sets | Filter parameter lists using explicit set difference |
-| **VRAM Usage $> 85\%$** | Memory Profiling | Batch size or micro-batch too large | Enable activation checkpointing; reduce micro-batch size |
+| **$\text{max}(\vert{}z_0\vert{}) > 25.0$**              | Forward Logit Audit    | Unscaled output projection weights               | Clamp linear head initialization; check final RMSNorm / LayerNorm                  |
+| **`param.grad is None`**                                | Autograd Flow Audit    | Submodule detached (`.detach()` / broken graph)  | Trace residual additions; ensure forward returns tensor connected to loss          |
+| **`data_ptr` Mismatch**                                 | Tied Embedding Audit   | Weights decoupled via `.clone()`                 | Bind references directly: `self.lm_head.weight = self.tok_emb.weight`              |
+| **Optimizer Group Overlap**                             | Param Group Audit      | Parameter listed in decay and no-decay sets      | Filter parameter lists using explicit set difference                               |
+| **VRAM Usage $> 85\%$**                                 | Memory Profiling       | Batch size or micro-batch too large              | Enable activation checkpointing; reduce micro-batch size                           |

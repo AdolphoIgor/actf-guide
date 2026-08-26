@@ -55,7 +55,7 @@ Step 5a processes records routed to **Track A** through a multi-stage statistica
 
 ### Derivation of Reference Statistical Baselines
 
-A critical theoretical question in heuristic filtering is: *Where do the statistical decision thresholds (e.g., punctuation ratio $> 0.3$, stop-word density $< 0.05$) originate?*
+A critical theoretical question in heuristic filtering is: _Where do the statistical decision thresholds (e.g., punctuation ratio $> 0.3$, stop-word density $< 0.05$) originate?_
 
 In enterprise LLMOps, these boundary constraints are not arbitrary guesses; they are derived through **Empirical Reference Distribution Fitting**:
 
@@ -69,34 +69,25 @@ In enterprise LLMOps, these boundary constraints are not arbitrary guesses; they
 
 $$\text{Punctuation Ratio} = \frac{\text{Count}(\text{Punctuation Marks})}{\text{Count}(\text{Total Words})}$$
 
-
 $$\text{Filter Boundary}: \text{Punctuation Ratio} > 0.30 \quad \text{or} \quad \text{Punctuation Ratio} = 0.00$$
 
-
-2. **Symbol-to-Word Ratio:** Operational and layout symbols (`#`, `$`, `%`, `@`, `^`, `*`, `=`) appear sparsely in standard prose. High symbol ratios signal system telemetry, tracking templates, or web navigation junk:
+1. **Symbol-to-Word Ratio:** Operational and layout symbols (`#`, `$`, `%`, `@`, `^`, `*`, `=`) appear sparsely in standard prose. High symbol ratios signal system telemetry, tracking templates, or web navigation junk:
 
 $$\text{Symbol-to-Word Ratio} = \frac{\text{Count}(\text{Operational Symbols})}{\text{Count}(\text{Total Words})}$$
 
-
 $$\text{Filter Boundary}: \text{Symbol-to-Word Ratio} > 0.10$$
 
-
-3. **Stop-Word Density (Functional Vocabulary Check):** Human languages rely fundamentally on structural functional words (e.g., in English: *"the"*, *"and"*, *"is"*, *"of"*, *"to"*). If a text block contains a high total word count but exhibits a stop-word density below 5%, it is statistically impossible for it to be natural prose. It represents raw inventory lists, error dumps, or machine outputs:
+1. **Stop-Word Density (Functional Vocabulary Check):** Human languages rely fundamentally on structural functional words (e.g., in English: _"the"_, _"and"_, _"is"_, _"of"_, _"to"_). If a text block contains a high total word count but exhibits a stop-word density below 5%, it is statistically impossible for it to be natural prose. It represents raw inventory lists, error dumps, or machine outputs:
 
 $$\text{Stop-Word Density} = \frac{\text{Count}(\text{Language-Specific Functional Stop-Words})}{\text{Count}(\text{Total Words})}$$
 
-
 $$\text{Filter Boundary}: \text{Stop-Word Density} < 0.05$$
 
-
-4. **N-Gram Repetition Ratio:** Web scrapers frequently encounter infinite loops, page crashes, or repeating UI banners. The pipeline calculates the relative frequency of duplicate 2-gram, 3-gram, and 4-gram sequences:
+1. **N-Gram Repetition Ratio:** Web scrapers frequently encounter infinite loops, page crashes, or repeating UI banners. The pipeline calculates the relative frequency of duplicate 2-gram, 3-gram, and 4-gram sequences:
 
 $$\text{Repetition Ratio}_{n} = \frac{\text{Count}(\text{Duplicate } n\text{-grams})}{\text{Count}(\text{Total } n\text{-grams})}$$
 
-
 $$\text{Filter Boundary}: \text{Repetition Ratio}_{n} > 0.20$$
-
-
 
 ### Vectorized Boolean Mask Generation
 
@@ -106,18 +97,18 @@ The four statistical criteria are evaluated concurrently across contiguous memor
 
 ## 4. Macro-Linguistic Statistical Decision Matrix
 
-| Metric / Feature | Reference Origin | Mathematical Boundary | Artifact Target | Operational Action |
-| --- | --- | --- | --- | --- |
-| **Punctuation Ratio** | $3\sigma$ deviation from Gold Corpus mean | $> 0.30 \lor = 0.00$ | System configuration logs, database arrays, unpunctuated SKU lists. | **Purge:** Set Boolean mask bit to $0$. |
-| **Symbol-to-Word Ratio** | 99th percentile cutoff of Gold Corpus | $> 0.10$ | System telemetry, tracking templates, web-scraped navigation junk. | **Purge:** Set Boolean mask bit to $0$. |
-| **Stop-Word Density** | Lower bound tolerance ($<p_{1}$) of Gold Corpus | $< 0.05$ | Automated error dumps, raw inventory logs, machine outputs. | **Purge:** Set Boolean mask bit to $0$. |
-| **N-Gram Repetition** | Empirical repetition ceiling | $> 0.20$ (for $n \in \{2, 3, 4\}$) | Bad web scraping, page crash loops, repeating website banners. | **Purge:** Set Boolean mask bit to $0$. |
+| Metric / Feature         | Reference Origin                                | Mathematical Boundary              | Artifact Target                                                     | Operational Action                      |
+| ------------------------ | ----------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------- | --------------------------------------- |
+| **Punctuation Ratio**    | $3\sigma$ deviation from Gold Corpus mean       | $> 0.30 \lor = 0.00$               | System configuration logs, database arrays, unpunctuated SKU lists. | **Purge:** Set Boolean mask bit to $0$. |
+| **Symbol-to-Word Ratio** | 99th percentile cutoff of Gold Corpus           | $> 0.10$                           | System telemetry, tracking templates, web-scraped navigation junk.  | **Purge:** Set Boolean mask bit to $0$. |
+| **Stop-Word Density**    | Lower bound tolerance ($<p_{1}$) of Gold Corpus | $< 0.05$                           | Automated error dumps, raw inventory logs, machine outputs.         | **Purge:** Set Boolean mask bit to $0$. |
+| **N-Gram Repetition**    | Empirical repetition ceiling                    | $> 0.20$ (for $n \in \{2, 3, 4\}$) | Bad web scraping, page crash loops, repeating website banners.      | **Purge:** Set Boolean mask bit to $0$. |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Empirical Distribution Profilers:** Statistical analysis utilities used to compute probability density functions, standard deviations ($\sigma$), and percentile cutoffs over gold-standard reference datasets.
-* **Vectorized Array Evaluators:** High-performance string compute engines capable of measuring symbol frequencies and word lengths directly over contiguous memory arrays.
-* **Lexical Stop-Word Hash Sets:** In-memory, $O(1)$ lookup hash tables containing functional language stop-word sets for microsecond density evaluation.
-* **In-Memory Boolean Mask Generators:** Bitwise array utilities that construct zero-copy filtering masks to prune invalid records in place.
+- **Empirical Distribution Profilers:** Statistical analysis utilities used to compute probability density functions, standard deviations ($\sigma$), and percentile cutoffs over gold-standard reference datasets.
+- **Vectorized Array Evaluators:** High-performance string compute engines capable of measuring symbol frequencies and word lengths directly over contiguous memory arrays.
+- **Lexical Stop-Word Hash Sets:** In-memory, $O(1)$ lookup hash tables containing functional language stop-word sets for microsecond density evaluation.
+- **In-Memory Boolean Mask Generators:** Bitwise array utilities that construct zero-copy filtering masks to prune invalid records in place.

@@ -10,11 +10,11 @@ $$\text{KV-Cache Memory per Token} = 2 \times 2 \times N_{\text{layers}} \times 
 
 Where:
 
-* The first factor of $2$ accounts for both Keys and Values.
-* The second factor of $2$ accounts for 16-bit precision (FP16/BF16 = 2 bytes).
-* $N_{\text{layers}}$ is network depth.
-* $N_{\text{kv\_heads}}$ is the number of Key-Value attention heads.
-* $d_{\text{head}} = d_{\text{model}} / N_{\text{query\_heads}}$ is the dimension of each head.
+- The first factor of $2$ accounts for both Keys and Values.
+- The second factor of $2$ accounts for 16-bit precision (FP16/BF16 = 2 bytes).
+- $N_{\text{layers}}$ is network depth.
+- $N_{\text{kv\_heads}}$ is the number of Key-Value attention heads.
+- $d_{\text{head}} = d_{\text{model}} / N_{\text{query\_heads}}$ is the dimension of each head.
 
 ```text
 KV-Cache Memory Footprint for LLaMA-7B (L=32, H=32, d_head=128, FP16) across 8k Context:
@@ -48,34 +48,34 @@ The relationship between the number of Query heads ($N_q$) and Key/Value heads (
 
 ### A. Multi-Head Attention (MHA)
 
-* **Configuration:** $N_q = N_{kv} = H$. Every query head possesses an independent, dedicated key and value head.
-* **Characteristics:** Maximum representational capacity and multi-feature expressive power.
-* **Bottleneck:** High KV-cache memory consumption during inference, limiting maximum serving concurrency and context length.
+- **Configuration:** $N_q = N_{kv} = H$. Every query head possesses an independent, dedicated key and value head.
+- **Characteristics:** Maximum representational capacity and multi-feature expressive power.
+- **Bottleneck:** High KV-cache memory consumption during inference, limiting maximum serving concurrency and context length.
 
 ### B. Multi-Query Attention (MQA)
 
-* **Configuration:** $N_q = H, N_{kv} = 1$. All $H$ query heads share a single key head and a single value head across the entire layer.
-* **Characteristics:** Reduces KV-cache memory consumption and bandwidth pressure by a factor of $H\times$ (up to $90\%\text{--}95\%$ reduction).
-* **Trade-Off:** Can result in minor quality degradation, higher perplexity, and training instability on complex reasoning or multi-task workloads due to restricted key-value expressivity.
+- **Configuration:** $N_q = H, N_{kv} = 1$. All $H$ query heads share a single key head and a single value head across the entire layer.
+- **Characteristics:** Reduces KV-cache memory consumption and bandwidth pressure by a factor of $H\times$ (up to $90\%\text{--}95\%$ reduction).
+- **Trade-Off:** Can result in minor quality degradation, higher perplexity, and training instability on complex reasoning or multi-task workloads due to restricted key-value expressivity.
 
 ### C. Grouped-Query Attention (GQA)
 
-* **Configuration:** $1 < N_{kv} < N_q$, where the query heads are divided into $G = N_{kv}$ groups, each containing $\text{Group Size} = N_q / N_{kv}$ query heads sharing a single key/value pair.
-* **Characteristics:** The production sweet spot. Achieves the generation speed and memory reduction of MQA while preserving the representation quality, task accuracy, and perplexity of full MHA.
+- **Configuration:** $1 < N_{kv} < N_q$, where the query heads are divided into $G = N_{kv}$ groups, each containing $\text{Group Size} = N_q / N_{kv}$ query heads sharing a single key/value pair.
+- **Characteristics:** The production sweet spot. Achieves the generation speed and memory reduction of MQA while preserving the representation quality, task accuracy, and perplexity of full MHA.
 
 ---
 
 ## 3. Comparison Matrix: MHA vs. GQA vs. MQA
 
-| Architectural Dimension | Multi-Head Attention (MHA) | Grouped-Query Attention (GQA) | Multi-Query Attention (MQA) |
-| --- | --- | --- | --- |
-| **Query Heads ($N_q$)** | $H$ (e.g., $32$) | $H$ (e.g., $32$) | $H$ (e.g., $32$) |
-| **Key/Value Heads ($N_{kv}$)** | $H$ (e.g., $32$) | $G$ (e.g., $8$) | $1$ |
-| **Linear Projection Matrices** | $W_Q, W_K, W_V \in \mathbb{R}^{d \times d}$ | $W_Q \in \mathbb{R}^{d \times d}$, $W_K, W_V \in \mathbb{R}^{d \times (G \cdot d_{\text{head}})}$ | $W_Q \in \mathbb{R}^{d \times d}$, $W_K, W_V \in \mathbb{R}^{d \times d_{\text{head}}}$ |
-| **KV-Cache Size per Step** | $2 \cdot H \cdot d_{\text{head}} \cdot \text{precision}$ | $2 \cdot G \cdot d_{\text{head}} \cdot \text{precision}$ | $2 \cdot 1 \cdot d_{\text{head}} \cdot \text{precision}$ |
-| **Serving Throughput** | Baseline ($1\times$) | **$3\times\text{--}6\times$ Higher Throughput** | **$5\times\text{--}8\times$ Higher Throughput** |
-| **Quality Retention** | 100% (Reference) | **99.5% - 100% Parity with MHA** | 96% - 98% (Slight Perplexity Penalty) |
-| **Adoption in Modern LLMs** | GPT-2, GPT-3, Original LLaMA | **LLaMA-3, Qwen-2.5, Mistral-7B** | Falcon-40B, StarCoder |
+| Architectural Dimension        | Multi-Head Attention (MHA)                               | Grouped-Query Attention (GQA)                                                                     | Multi-Query Attention (MQA)                                                             |
+| ------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Query Heads ($N_q$)**        | $H$ (e.g., $32$)                                         | $H$ (e.g., $32$)                                                                                  | $H$ (e.g., $32$)                                                                        |
+| **Key/Value Heads ($N_{kv}$)** | $H$ (e.g., $32$)                                         | $G$ (e.g., $8$)                                                                                   | $1$                                                                                     |
+| **Linear Projection Matrices** | $W_Q, W_K, W_V \in \mathbb{R}^{d \times d}$              | $W_Q \in \mathbb{R}^{d \times d}$, $W_K, W_V \in \mathbb{R}^{d \times (G \cdot d_{\text{head}})}$ | $W_Q \in \mathbb{R}^{d \times d}$, $W_K, W_V \in \mathbb{R}^{d \times d_{\text{head}}}$ |
+| **KV-Cache Size per Step**     | $2 \cdot H \cdot d_{\text{head}} \cdot \text{precision}$ | $2 \cdot G \cdot d_{\text{head}} \cdot \text{precision}$                                          | $2 \cdot 1 \cdot d_{\text{head}} \cdot \text{precision}$                                |
+| **Serving Throughput**         | Baseline ($1\times$)                                     | **$3\times\text{--}6\times$ Higher Throughput**                                                   | **$5\times\text{--}8\times$ Higher Throughput**                                         |
+| **Quality Retention**          | 100% (Reference)                                         | **99.5% - 100% Parity with MHA**                                                                  | 96% - 98% (Slight Perplexity Penalty)                                                   |
+| **Adoption in Modern LLMs**    | GPT-2, GPT-3, Original LLaMA                             | **LLaMA-3, Qwen-2.5, Mistral-7B**                                                                 | Falcon-40B, StarCoder                                                                   |
 
 ---
 
@@ -136,7 +136,7 @@ import torch.nn.functional as F
 class GroupedQueryAttention(nn.Module):
     """
     Production-grade Grouped-Query Attention (GQA) with native PyTorch SDPA acceleration.
-    
+
     Supports:
       • Multi-Head Attention (MHA):  num_heads == num_kv_heads
       • Grouped-Query Attention (GQA): num_heads > num_kv_heads > 1
@@ -167,7 +167,7 @@ class GroupedQueryAttention(nn.Module):
         # K and V project to the compressed KV dimension: (num_kv_heads * head_dim)
         self.k_proj = nn.Linear(n_embd, self.num_kv_heads * self.head_dim, bias=False)
         self.v_proj = nn.Linear(n_embd, self.num_kv_heads * self.head_dim, bias=False)
-        
+
         # Output projection
         self.out_proj = nn.Linear(n_embd, n_embd, bias=False)
 
@@ -198,7 +198,7 @@ class GroupedQueryAttention(nn.Module):
         # 4. Hardware-Fused FlashAttention / SDPA Kernel Execution
         # If is_causal=True and attn_mask is None, PyTorch routes to FlashAttention-2 causal kernel
         dropout_rate = self.dropout_p if self.training else 0.0
-        
+
         out = F.scaled_dot_product_attention(
             query=q,
             key=k,

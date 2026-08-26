@@ -14,7 +14,7 @@ Raw text extracted from web crawls and corporate document repositories is heavil
 
 ### A. Semantic Contamination & Structural Memorization
 
-When language models are trained on raw web dumps without boilerplate stripping, they optimize loss curves by memorizing structural layout syntax (e.g., `<div class="navigation-bar">`) and repeating corporate legal footers (e.g., *"Copyright © 2026 All Rights Reserved"*) rather than learning domain linguistics. During inference, this manifests as hallucinated legal footers, non-sensical navigation menus, or spontaneous structural tag generation.
+When language models are trained on raw web dumps without boilerplate stripping, they optimize loss curves by memorizing structural layout syntax (e.g., `<div class="navigation-bar">`) and repeating corporate legal footers (e.g., _"Copyright © 2026 All Rights Reserved"_) rather than learning domain linguistics. During inference, this manifests as hallucinated legal footers, non-sensical navigation menus, or spontaneous structural tag generation.
 
 ### B. Indiscriminate Extraction Flaws & Discourse Disruption
 
@@ -26,7 +26,7 @@ This indiscriminate merging breaks discourse coherence, corrupts attention matri
 
 ### C. PDF Layout Coordinate Contamination
 
-Unlike structured HTML/XML documents, PDF files and technical slide decks lack semantic DOM nodes; text elements are positioned via absolute 2D visual coordinates $(x, y)$. As a result, multi-page document extractions inject running headers, footers, floating page numbers (e.g., *"Page 14 of 105"*), and confidentiality stamps directly into the text stream at every page boundary, interrupting contiguous token sequences.
+Unlike structured HTML/XML documents, PDF files and technical slide decks lack semantic DOM nodes; text elements are positioned via absolute 2D visual coordinates $(x, y)$. As a result, multi-page document extractions inject running headers, footers, floating page numbers (e.g., _"Page 14 of 105"_), and confidentiality stamps directly into the text stream at every page boundary, interrupting contiguous token sequences.
 
 ---
 
@@ -60,8 +60,8 @@ For HTML/XML markup documents, the document is parsed into a Document Object Mod
 
 $$\text{TCR}(N) = \frac{\text{CharCount}(\text{Natural Language Prose})}{\text{CharCount}(\text{Markup Tags \& Attributes})}$$
 
-* **Low TCR ($\text{TCR}(N) < 0.20$):** Identified as structural navigation scaffolding, advertisement wrappers, or site footers, and evicted instantly.
-* **High TCR ($\text{TCR}(N) \ge 0.60$):** Identified as candidate content blocks (main articles, research prose) and passed to Stage 2.
+- **Low TCR ($\text{TCR}(N) < 0.20$):** Identified as structural navigation scaffolding, advertisement wrappers, or site footers, and evicted instantly.
+- **High TCR ($\text{TCR}(N) \ge 0.60$):** Identified as candidate content blocks (main articles, research prose) and passed to Stage 2.
 
 ### Stage 2: Linguistic Block Density Filtering
 
@@ -71,8 +71,8 @@ $$\text{LDS}(B) = \left( \frac{\text{Count}(\text{Stop Words})}{\text{Count}(\te
 
 Where $\bar{L}_{\text{sentence}}$ is the average sentence length within block $B$.
 
-* Main body prose exhibits high stop-word ratios ($\ge 0.25$) and longer average sentence lengths ($\bar{L}_{\text{sentence}} \ge 12$ words).
-* UI menus and link widgets exhibit low stop-word ratios ($< 0.10$) and short, fragmented sentence lengths ($\bar{L}_{\text{sentence}} < 4$ words), triggering immediate block removal.
+- Main body prose exhibits high stop-word ratios ($\ge 0.25$) and longer average sentence lengths ($\bar{L}_{\text{sentence}} \ge 12$ words).
+- UI menus and link widgets exhibit low stop-word ratios ($< 0.10$) and short, fragmented sentence lengths ($\bar{L}_{\text{sentence}} < 4$ words), triggering immediate block removal.
 
 ### Stage 3: Coordinate Margin Clipping & Pattern Layout Scrubbing
 
@@ -82,28 +82,25 @@ To strip running headers, footers, and floating page counters from multi-page PD
 
 $$\text{Vertical Margin Filter}: \text{Discard if } y < 0.05 \cdot H \quad \text{or} \quad y > 0.95 \cdot H$$
 
-
-
-where $H$ represents the total page height.
-2. **Vectorized Pattern Scrubbing:** Remaining pagination artifacts (e.g., `Page \d+ of \d+`) and confidentiality stamps are removed using compiled regular expression pattern-matching utilities.
+where $H$ represents the total page height. 2. **Vectorized Pattern Scrubbing:** Remaining pagination artifacts (e.g., `Page \d+ of \d+`) and confidentiality stamps are removed using compiled regular expression pattern-matching utilities.
 
 ---
 
 ## 4. Extraction & Artifact Stripping Matrix
 
-| Document Source | Artifact / Noise Type | Detection Metric / Signature | Theoretical Engine | Pipeline Action |
-| --- | --- | --- | --- | --- |
-| **HTML Web Pages** | Navigation Menus, Footers | $\text{TCR}(N) < 0.20$ | C-Compiled DOM Parsers | Node Tree Pruning |
-| **Web Sidebars / Link Hubs** | Social Shares, Tag Lists | $\text{LDS}(B) < 0.05$ | Linguistic Density Extractor | Block Eviction |
-| **Multi-Page PDFs** | Running Headers & Footers | $y < 0.05 \cdot H \lor y > 0.95 \cdot H$ | Bounding-Box Geometry Parser | Margin Clipping |
-| **Corporate Whitepapers** | Confidentiality Watermarks | Pattern: `(?i)(confidential|draft)` | Vectorized Regex Engine | String Redaction |
-| **Document Page Limits** | Pagination Counters | Pattern: `Page \d+ of \d+` | Vectorized Regex Engine | Pattern Clearing |
+| Document Source              | Artifact / Noise Type      | Detection Metric / Signature             | Theoretical Engine           | Pipeline Action         |
+| ---------------------------- | -------------------------- | ---------------------------------------- | ---------------------------- | ----------------------- |
+| **HTML Web Pages**           | Navigation Menus, Footers  | $\text{TCR}(N) < 0.20$                   | C-Compiled DOM Parsers       | Node Tree Pruning       |
+| **Web Sidebars / Link Hubs** | Social Shares, Tag Lists   | $\text{LDS}(B) < 0.05$                   | Linguistic Density Extractor | Block Eviction          |
+| **Multi-Page PDFs**          | Running Headers & Footers  | $y < 0.05 \cdot H \lor y > 0.95 \cdot H$ | Bounding-Box Geometry Parser | Margin Clipping         |
+| **Corporate Whitepapers**    | Confidentiality Watermarks | Pattern: `(?i)(confidential              | draft)`                      | Vectorized Regex Engine | String Redaction |
+| **Document Page Limits**     | Pagination Counters        | Pattern: `Page \d+ of \d+`               | Vectorized Regex Engine      | Pattern Clearing        |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **High-Throughput DOM Parsers:** C-compiled XML/HTML tree parsers optimized for fast document node traversal.
-* **Heuristic Extraction Frameworks:** Algorithmic extractors combining DOM tree structural analysis with stop-word and density distribution heuristics.
-* **Layout Geometry Parsers:** Bounding-box extraction engines capable of mapping 2D visual layout coordinates $(x, y)$ from unstructured PDF streams.
-* **Vectorized Pattern Utilities:** High-performance string-replacement engines executing regular expression pattern clearing directly across binary memory arrays.
+- **High-Throughput DOM Parsers:** C-compiled XML/HTML tree parsers optimized for fast document node traversal.
+- **Heuristic Extraction Frameworks:** Algorithmic extractors combining DOM tree structural analysis with stop-word and density distribution heuristics.
+- **Layout Geometry Parsers:** Bounding-box extraction engines capable of mapping 2D visual layout coordinates $(x, y)$ from unstructured PDF streams.
+- **Vectorized Pattern Utilities:** High-performance string-replacement engines executing regular expression pattern clearing directly across binary memory arrays.

@@ -1,4 +1,4 @@
-```python
+````python
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -69,12 +69,12 @@ In standard language model architectures, two distinct operations interface dire
 2. Logit Generation ("Writing"):
    Final Hidden Vector h_L ∈ R^{d_model} ──► [ Output Linear Projection (W_head) ] ──► Unnormalized Logits z ∈ R^V
 
-```
+````
 
 In an untied architecture:
 
-* The input embedding matrix is parameterized as $W_{\text{emb}} \in \mathbb{R}^{V \times d_{\text{model}}}$.
-* The output language model head is parameterized as $W_{\text{head}} \in \mathbb{R}^{V \times d_{\text{model}}}$ (or $W_{\text{head}} \in \mathbb{R}^{d_{\text{model}} \times V}$ depending on orientation).
+- The input embedding matrix is parameterized as $W_{\text{emb}} \in \mathbb{R}^{V \times d_{\text{model}}}$.
+- The output language model head is parameterized as $W_{\text{head}} \in \mathbb{R}^{V \times d_{\text{model}}}$ (or $W_{\text{head}} \in \mathbb{R}^{d_{\text{model}} \times V}$ depending on orientation).
 
 **Symmetric Weight Tying** (introduced by Press & Wolf and Inan et al.) enforces a direct parameter-sharing constraint:
 
@@ -138,15 +138,15 @@ In an untied network, input embeddings and output projection vectors exist in se
 
 Weight tying collapses these spaces into a **single metric space**:
 
-* If two words $w_a$ and $w_b$ are semantically similar, their input vectors $w_a, w_b$ are close under cosine similarity.
-* When the hidden state $h_L$ approaches the cluster around $w_a$, the dot product $h_L \cdot w_a$ produces a high logit, making the model predict tokens that share the same latent neighborhood.
+- If two words $w_a$ and $w_b$ are semantically similar, their input vectors $w_a, w_b$ are close under cosine similarity.
+- When the hidden state $h_L$ approaches the cluster around $w_a$, the dot product $h_L \cdot w_a$ produces a high logit, making the model predict tokens that share the same latent neighborhood.
 
 ### 2. Regularization in Small Data Regimes
 
 In constrained corpora (such as TinyShakespeare or domain-specific code datasets), rare tokens appear infrequently:
 
-* **Untied Models:** The input embedding vector for a rare token updates only when that token appears in the prompt, while its output projection vector updates only when that token is the target. Both matrices remain under-trained and prone to overfitting.
-* **Tied Models:** Every time a rare token appears as an input or an output target, the same underlying vector $w_{\text{shared}}[v]$ receives gradient updates. This doubles the effective sample efficiency per parameter for the vocabulary.
+- **Untied Models:** The input embedding vector for a rare token updates only when that token appears in the prompt, while its output projection vector updates only when that token is the target. Both matrices remain under-trained and prone to overfitting.
+- **Tied Models:** Every time a rare token appears as an input or an output target, the same underlying vector $w_{\text{shared}}[v]$ receives gradient updates. This doubles the effective sample efficiency per parameter for the vocabulary.
 
 ---
 
@@ -173,13 +173,13 @@ B. Medium Foundation Model (V = 32,000, d_model = 4,096, L = 32):
 
 ### Quantitative Comparison Matrix
 
-| Model Architecture | Parameters ($\Phi$) | Vocab Size ($V$) | Hidden Dim ($d$) | Parameter Savings from Tying | Architectural Choice |
-| --- | --- | --- | --- | --- | --- |
-| **MiniGPT** | $\approx 1\text{M}$ | $512$ | $128$ | **$5.9\%$** ($0.065\text{M}$ params) | **Tied** (Critical for small regimes) |
-| **GPT-2 Small** | $124\text{M}$ | $50,257$ | $768$ | **$24.1\%$** ($38.6\text{M}$ params) | **Tied** |
-| **Gemma-2B / 7B** | $2.5\text{B} / 8.5\text{B}$ | $256,000$ | $2048 / 3072$ | **$17.3\% / 8.4\%$** | **Tied** |
-| **LLaMA-3 8B** | $8.0\text{B}$ | $128,256$ | $4096$ | **$6.1\%$** ($525\text{M}$ params) | **Untied** |
-| **Mistral-7B** | $7.2\text{B}$ | $32,000$ | $4096$ | **$1.8\%$** ($131\text{M}$ params) | **Untied** |
+| Model Architecture | Parameters ($\Phi$)         | Vocab Size ($V$) | Hidden Dim ($d$) | Parameter Savings from Tying         | Architectural Choice                  |
+| ------------------ | --------------------------- | ---------------- | ---------------- | ------------------------------------ | ------------------------------------- |
+| **MiniGPT**        | $\approx 1\text{M}$         | $512$            | $128$            | **$5.9\%$** ($0.065\text{M}$ params) | **Tied** (Critical for small regimes) |
+| **GPT-2 Small**    | $124\text{M}$               | $50,257$         | $768$            | **$24.1\%$** ($38.6\text{M}$ params) | **Tied**                              |
+| **Gemma-2B / 7B**  | $2.5\text{B} / 8.5\text{B}$ | $256,000$        | $2048 / 3072$    | **$17.3\% / 8.4\%$**                 | **Tied**                              |
+| **LLaMA-3 8B**     | $8.0\text{B}$               | $128,256$        | $4096$           | **$6.1\%$** ($525\text{M}$ params)   | **Untied**                            |
+| **Mistral-7B**     | $7.2\text{B}$               | $32,000$         | $4096$           | **$1.8\%$** ($131\text{M}$ params)   | **Untied**                            |
 
 ---
 
@@ -212,11 +212,11 @@ class TiedTransformerLM(nn.Module):
         # 2. Transformer Core Blocks
         self.layers = nn.ModuleList([
             nn.TransformerEncoderLayer(
-                d_model=n_embd, 
-                nhead=4, 
-                dim_feedforward=4*n_embd, 
-                activation="gelu", 
-                batch_first=True, 
+                d_model=n_embd,
+                nhead=4,
+                dim_feedforward=4*n_embd,
+                activation="gelu",
+                batch_first=True,
                 norm_first=True
             )
             for _ in range(n_layer)
@@ -271,7 +271,7 @@ class TiedTransformerLM(nn.Module):
 
         if not (is_same_object and is_same_data_ptr):
             raise AssertionError("Weight tying failed: Tensors reside in distinct memory buffers.")
-        
+
         return True
 
 ```
@@ -310,5 +310,5 @@ While weight tying is standard in small-to-medium models, modern multi-billion p
 
 ### When to Tie vs. When to Untie
 
-* **Enforce Weight Tying When:** Training micro-models ($\Phi < 1\text{B}$), operating in data-constrained or pedagogical regimes (TinyShakespeare, synthetic tasks), using wide vocabularies ($V > 32\text{k}$) on small models, or deploying on edge devices with limited VRAM.
-* **Keep Weights Untied When:** Training frontier models ($\Phi \ge 7\text{B}$) on multi-trillion token datasets where parameter capacity is not bottlenecked by the embedding table, and maximum logit expressivity is required.
+- **Enforce Weight Tying When:** Training micro-models ($\Phi < 1\text{B}$), operating in data-constrained or pedagogical regimes (TinyShakespeare, synthetic tasks), using wide vocabularies ($V > 32\text{k}$) on small models, or deploying on edge devices with limited VRAM.
+- **Keep Weights Untied When:** Training frontier models ($\Phi \ge 7\text{B}$) on multi-trillion token datasets where parameter capacity is not bottlenecked by the embedding table, and maximum logit expressivity is required.

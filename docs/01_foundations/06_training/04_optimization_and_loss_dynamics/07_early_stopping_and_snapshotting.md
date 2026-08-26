@@ -16,8 +16,8 @@ Loss Trajectory Over Optimization Steps:
    │      \    \                              _ - -▼- - _
    │       \    \                         _ -             - _  Validation Loss Diverges
    │        \    \                    _ -                     - _ ──► Generalization Loss
-   │         \    \               _ -                            
-   │          \    \_ _ _ _ _ _ -                                
+   │         \    \               _ -
+   │          \    \_ _ _ _ _ _ -
    │           \
    │            \_________________________________________________  Training Loss (L_train)
    │                                                                 Monotonic Descent
@@ -72,8 +72,8 @@ $$\mathcal{L}_{\text{val}}^{(t)} < \mathcal{L}_{\text{best}} - \delta_{\text{min
 
 Where:
 
-* $\mathcal{L}_{\text{best}} = \min_{i < t} \mathcal{L}_{\text{val}}^{(i)}$ is the lowest validation loss recorded prior to step $t$.
-* $\delta_{\text{min}} \ge 0$ is the minimum absolute delta required to qualify as a valid improvement (e.g., $\delta_{\text{min}} = 10^{-4}$).
+- $\mathcal{L}_{\text{best}} = \min_{i < t} \mathcal{L}_{\text{val}}^{(i)}$ is the lowest validation loss recorded prior to step $t$.
+- $\delta_{\text{min}} \ge 0$ is the minimum absolute delta required to qualify as a valid improvement (e.g., $\delta_{\text{min}} = 10^{-4}$).
 
 The patience counter $p_t$ updates according to the recursive relation:
 
@@ -147,9 +147,9 @@ Storage IO Sequence:
 
 Persisting checkpoints at every evaluation interval quickly exhausts local disk space. A production checkpoint manager maintains:
 
-* **The Best Checkpoint (`best_model.pt`):** The historical minimum validation loss snapshot.
-* **The Latest Checkpoint (`latest_checkpoint.pt`):** The most recent state for crash recovery.
-* **Top-K Best Checkpoints (`ckpt_top_1.pt`, `ckpt_top_2.pt`, ...):** A ranked priority queue of the $K$ best checkpoints, automatically pruning older, inferior snapshots from storage.
+- **The Best Checkpoint (`best_model.pt`):** The historical minimum validation loss snapshot.
+- **The Latest Checkpoint (`latest_checkpoint.pt`):** The most recent state for crash recovery.
+- **Top-K Best Checkpoints (`ckpt_top_1.pt`, `ckpt_top_2.pt`, ...):** A ranked priority queue of the $K$ best checkpoints, automatically pruning older, inferior snapshots from storage.
 
 ---
 
@@ -182,7 +182,7 @@ class EarlyStoppingCoordinator:
         self.patience = patience
         self.min_delta = min_delta
         self.smoothing_alpha = smoothing_alpha
-        
+
         self.best_loss = float("inf")
         self.smoothed_loss: Optional[float] = None
         self.patience_counter = 0
@@ -232,7 +232,7 @@ class CheckpointManager:
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
         self.max_to_keep = max_to_keep
-        
+
         # Track top-K checkpoints as a list of tuples: (val_loss, file_path)
         self.top_checkpoints: List[tuple[float, Path]] = []
 
@@ -387,5 +387,5 @@ Before training resumes from an existing checkpoint, the recovery pipeline must 
 
 ### Common Checkpoint Recovery Pitfalls
 
-* **Resuming Without Optimizer Moments:** Loading only `model.load_state_dict()` and initializing a fresh optimizer resets $m_t = 0$ and $v_t = 0$. At step $t_{\text{resume}}$, the fresh optimizer applies large, uncalibrated updates that destabilize the pre-trained weights.
-* **GPU Memory Spikes on Load:** Calling `torch.load("checkpoint.pt")` without `map_location="cpu"` defaults to loading all tensors onto GPU 0 first before redistributing, triggering an unexpected CUDA Out-of-Memory exception. Always load to CPU first, then transfer parameters to device ranks.
+- **Resuming Without Optimizer Moments:** Loading only `model.load_state_dict()` and initializing a fresh optimizer resets $m_t = 0$ and $v_t = 0$. At step $t_{\text{resume}}$, the fresh optimizer applies large, uncalibrated updates that destabilize the pre-trained weights.
+- **GPU Memory Spikes on Load:** Calling `torch.load("checkpoint.pt")` without `map_location="cpu"` defaults to loading all tensors onto GPU 0 first before redistributing, triggering an unexpected CUDA Out-of-Memory exception. Always load to CPU first, then transfer parameters to device ranks.

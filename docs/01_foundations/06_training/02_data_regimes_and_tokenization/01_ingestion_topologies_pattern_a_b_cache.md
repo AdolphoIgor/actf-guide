@@ -67,19 +67,19 @@ NF4 (NormalFloat-4):
 
 ### Precision Comparison Matrix
 
-| Format | Type | Total Bits | Exponent Bits | Mantissa Bits | Exponent Bias | Dynamic Range ($[\text{Min}_{\text{norm}}, \text{Max}]$) | Memory (Bytes / Param) | Primary Role in LLMOps Lifecycle |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **FP64** | Float | 64 | 11 | 52 | 1023 | $\approx 2.23 \times 10^{-308} \text{ to } 1.80 \times 10^{308}$ | $8\text{ bytes}$ | High-precision scientific simulation (rarely used in LLMs due to memory overhead). |
-| **FP32** | Float | 32 | 8 | 23 | 127 | $\approx 1.18 \times 10^{-38} \text{ to } 3.40 \times 10^{38}$ | $4\text{ bytes}$ | Golden baseline; AdamW optimizer states ($m_t, v_t$), master weights, loss scaling. |
-| **TF32** | Float | 19 | 8 | 10 | 127 | $\approx 1.18 \times 10^{-38} \text{ to } 3.40 \times 10^{38}$ | $4\text{ bytes}$ | Hardware-accelerated GEMM operations on NVIDIA Ampere/Hopper/Blackwell Tensor Cores. |
-| **FP16** | Float | 16 | 5 | 10 | 15 | $\approx 6.10 \times 10^{-5} \text{ to } 65,504$ | $2\text{ bytes}$ | Legacy mixed-precision training (requires dynamic loss scaling due to narrow exponent). |
-| **BF16** | Float | 16 | 8 | 7 | 127 | $\approx 1.18 \times 10^{-38} \text{ to } 3.39 \times 10^{38}$ | $2\text{ bytes}$ | Gold standard for modern LLM pre-training & SFT; matches FP32 range without loss scaling. |
-| **FP8 (E4M3)** | Float | 8 | 4 | 3 | 7 | $\approx 0.0156 \text{ to } 448$ | $1\text{ byte}$ | Forward pass activations and weights in FP8 mixed-precision training (Hopper/Blackwell). |
-| **FP8 (E5M2)** | Float | 8 | 5 | 2 | 15 | $\approx 6.10 \times 10^{-5} \text{ to } 57,344$ | $1\text{ byte}$ | Backward pass gradient representations in FP8 training (prioritizes dynamic range). |
-| **FP4 / NVFP4** | Float | 4 | 2 | 1 | 1 | $\approx 0.5 \text{ to } 6.0$ (scaled via MX block) | $0.5\text{ bytes}$ | Ultra-high throughput inference and microscaling (MX) matrix multiplication (Blackwell). |
-| **INT8** | Int | 8 | — | — | — | $[-128, 127]$ | $1\text{ byte}$ | Post-Training Quantization (PTQ), `bitsandbytes` LLM.int8(), KV-cache quantization. |
-| **INT4** | Int | 4 | — | — | — | $[-8, 7]$ (or $[0, 15]$ unsigned) | $0.5\text{ bytes}$ | Weight-only quantization (AWQ, GPTQ) for edge & consumer GPU inference serving. |
-| **NF4** | Quant | 4 | — | — | — | 16 quantile points for $\mathcal{N}(0, 1)$ | $0.5\text{ bytes}$ | QLoRA fine-tuning; information-theoretically optimal for normally distributed weights. |
+| Format          | Type  | Total Bits | Exponent Bits | Mantissa Bits | Exponent Bias | Dynamic Range ($[\text{Min}_{\text{norm}}, \text{Max}]$)         | Memory (Bytes / Param) | Primary Role in LLMOps Lifecycle                                                          |
+| --------------- | ----- | ---------- | ------------- | ------------- | ------------- | ---------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------- |
+| **FP64**        | Float | 64         | 11            | 52            | 1023          | $\approx 2.23 \times 10^{-308} \text{ to } 1.80 \times 10^{308}$ | $8\text{ bytes}$       | High-precision scientific simulation (rarely used in LLMs due to memory overhead).        |
+| **FP32**        | Float | 32         | 8             | 23            | 127           | $\approx 1.18 \times 10^{-38} \text{ to } 3.40 \times 10^{38}$   | $4\text{ bytes}$       | Golden baseline; AdamW optimizer states ($m_t, v_t$), master weights, loss scaling.       |
+| **TF32**        | Float | 19         | 8             | 10            | 127           | $\approx 1.18 \times 10^{-38} \text{ to } 3.40 \times 10^{38}$   | $4\text{ bytes}$       | Hardware-accelerated GEMM operations on NVIDIA Ampere/Hopper/Blackwell Tensor Cores.      |
+| **FP16**        | Float | 16         | 5             | 10            | 15            | $\approx 6.10 \times 10^{-5} \text{ to } 65,504$                 | $2\text{ bytes}$       | Legacy mixed-precision training (requires dynamic loss scaling due to narrow exponent).   |
+| **BF16**        | Float | 16         | 8             | 7             | 127           | $\approx 1.18 \times 10^{-38} \text{ to } 3.39 \times 10^{38}$   | $2\text{ bytes}$       | Gold standard for modern LLM pre-training & SFT; matches FP32 range without loss scaling. |
+| **FP8 (E4M3)**  | Float | 8          | 4             | 3             | 7             | $\approx 0.0156 \text{ to } 448$                                 | $1\text{ byte}$        | Forward pass activations and weights in FP8 mixed-precision training (Hopper/Blackwell).  |
+| **FP8 (E5M2)**  | Float | 8          | 5             | 2             | 15            | $\approx 6.10 \times 10^{-5} \text{ to } 57,344$                 | $1\text{ byte}$        | Backward pass gradient representations in FP8 training (prioritizes dynamic range).       |
+| **FP4 / NVFP4** | Float | 4          | 2             | 1             | 1             | $\approx 0.5 \text{ to } 6.0$ (scaled via MX block)              | $0.5\text{ bytes}$     | Ultra-high throughput inference and microscaling (MX) matrix multiplication (Blackwell).  |
+| **INT8**        | Int   | 8          | —             | —             | —             | $[-128, 127]$                                                    | $1\text{ byte}$        | Post-Training Quantization (PTQ), `bitsandbytes` LLM.int8(), KV-cache quantization.       |
+| **INT4**        | Int   | 4          | —             | —             | —             | $[-8, 7]$ (or $[0, 15]$ unsigned)                                | $0.5\text{ bytes}$     | Weight-only quantization (AWQ, GPTQ) for edge & consumer GPU inference serving.           |
+| **NF4**         | Quant | 4          | —             | —             | —             | 16 quantile points for $\mathcal{N}(0, 1)$                       | $0.5\text{ bytes}$     | QLoRA fine-tuning; information-theoretically optimal for normally distributed weights.    |
 
 ---
 
@@ -87,36 +87,34 @@ NF4 (NormalFloat-4):
 
 #### 1. Why BF16 Replaced FP16 in Modern LLM Training
 
-* **Underflow and Overflow Immunity:** FP16 allocates only 5 bits to the exponent, capping its maximum representable value at $65,504$ and its minimum non-zero normalized value at $6.10 \times 10^{-5}$. During backpropagation in deep Transformer stacks, gradient magnitudes easily underflow to zero or overflow to $\infty$, causing loss divergence (`NaN`). Standard FP16 training requires complex dynamic loss scaling (`torch.cuda.amp.GradScaler`) to artificially shift gradient ranges into the representable window.
-* **FP32 Dynamic Range Parity:** BF16 maintains the exact same 8-bit exponent as FP32, providing an identical dynamic range ($10^{-38}$ to $10^{38}$) at half the memory footprint. While BF16 trades off precision (7 mantissa bits vs. 10 in FP16), empirical optimization confirms that deep neural networks are robust to minor mantissa truncation but highly sensitive to exponent clipping.
+- **Underflow and Overflow Immunity:** FP16 allocates only 5 bits to the exponent, capping its maximum representable value at $65,504$ and its minimum non-zero normalized value at $6.10 \times 10^{-5}$. During backpropagation in deep Transformer stacks, gradient magnitudes easily underflow to zero or overflow to $\infty$, causing loss divergence (`NaN`). Standard FP16 training requires complex dynamic loss scaling (`torch.cuda.amp.GradScaler`) to artificially shift gradient ranges into the representable window.
+- **FP32 Dynamic Range Parity:** BF16 maintains the exact same 8-bit exponent as FP32, providing an identical dynamic range ($10^{-38}$ to $10^{38}$) at half the memory footprint. While BF16 trades off precision (7 mantissa bits vs. 10 in FP16), empirical optimization confirms that deep neural networks are robust to minor mantissa truncation but highly sensitive to exponent clipping.
 
 #### 2. TensorFloat-32 (TF32): Transparent Hardware Acceleration
 
-* **Execution Paradigm:** TF32 is not a persistent storage format (tensors remain in FP32 in VRAM), but an internal compute mode on modern Tensor Cores (NVIDIA Ampere, Hopper, Blackwell).
-* **The Best-of-Both Compromise:** TF32 consumes 19 bits: the 8-bit exponent of FP32 (preventing underflow/overflow) coupled with the 10-bit mantissa of FP16. Matrix multiplications ($C = A \cdot B$) execute up to $4\times$ faster on Tensor Cores with zero changes to FP32 user code (`torch.set_float32_matmul_precision('high')`).
+- **Execution Paradigm:** TF32 is not a persistent storage format (tensors remain in FP32 in VRAM), but an internal compute mode on modern Tensor Cores (NVIDIA Ampere, Hopper, Blackwell).
+- **The Best-of-Both Compromise:** TF32 consumes 19 bits: the 8-bit exponent of FP32 (preventing underflow/overflow) coupled with the 10-bit mantissa of FP16. Matrix multiplications ($C = A \cdot B$) execute up to $4\times$ faster on Tensor Cores with zero changes to FP32 user code (`torch.set_float32_matmul_precision('high')`).
 
 #### 3. FP8 Dual-Format Specification (E4M3 vs. E5M2)
 
 Modern 8-bit floating-point standards (OCP / NVIDIA Hopper / AMD MI300) establish two distinct formats to balance the competing demands of the forward and backward passes:
 
-* **FP8 E4M3 (Higher Precision):** Allocates 4 exponent bits and 3 mantissa bits, preserving maximum numerical precision with a bounded range (up to $448$). This format is used for **weights and activations** in the forward pass where values are naturally bounded by LayerNorm/RMSNorm.
-* **FP8 E5M2 (Higher Dynamic Range):** Allocates 5 exponent bits and 2 mantissa bits, matching the dynamic range of FP16 (up to $57,344$). This format is used for **gradients** in the backward pass, where gradient vectors span several orders of magnitude.
+- **FP8 E4M3 (Higher Precision):** Allocates 4 exponent bits and 3 mantissa bits, preserving maximum numerical precision with a bounded range (up to $448$). This format is used for **weights and activations** in the forward pass where values are naturally bounded by LayerNorm/RMSNorm.
+- **FP8 E5M2 (Higher Dynamic Range):** Allocates 5 exponent bits and 2 mantissa bits, matching the dynamic range of FP16 (up to $57,344$). This format is used for **gradients** in the backward pass, where gradient vectors span several orders of magnitude.
 
 #### 4. Quantized Integer and Information-Theoretic Formats (INT8, INT4, NF4)
 
-* **INT8 / INT4 Quantization:** Continuous weights $W_{\text{float}}$ are mapped into uniform discrete grids via a scaling factor $S$ and zero-point $Z$:
+- **INT8 / INT4 Quantization:** Continuous weights $W_{\text{float}}$ are mapped into uniform discrete grids via a scaling factor $S$ and zero-point $Z$:
 
 $$W_{\text{int}} = \text{round}\left(\frac{W_{\text{float}}}{S}\right) + Z$$
 
-
-* **NF4 (NormalFloat4):** Standard INT4 assumes a uniform distribution of values. However, trained neural network weights follow a zero-mean Gaussian distribution $\mathcal{W} \sim \mathcal{N}(0, \sigma^2)$. NF4 builds a non-uniform 4-bit lookup table where each of the 16 bin boundaries represents an equal area under the standard normal distribution curve, maximizing information retention and outperforming standard INT4 quantization in QLoRA parameter-efficient fine-tuning.
+- **NF4 (NormalFloat4):** Standard INT4 assumes a uniform distribution of values. However, trained neural network weights follow a zero-mean Gaussian distribution $\mathcal{W} \sim \mathcal{N}(0, \sigma^2)$. NF4 builds a non-uniform 4-bit lookup table where each of the 16 bin boundaries represents an equal area under the standard normal distribution curve, maximizing information retention and outperforming standard INT4 quantization in QLoRA parameter-efficient fine-tuning.
 
 ### Why BF16 Replaced FP16 in Modern LLM Training
 
-* **Underflow and Overflow Immunity:** FP16 allocates only 5 bits to the exponent, capping its maximum representable value at $65,504$ and its minimum non-zero value at $6.10 \times 10^{-5}$. During backpropagation in deep networks, small gradient magnitudes easily underflow to zero, while large activation values overflow to $\infty$, causing loss divergence (`NaN`). Standard FP16 training requires complex dynamic loss scaling (`torch.cuda.amp.GradScaler`) to artificially shift gradient ranges.
+- **Underflow and Overflow Immunity:** FP16 allocates only 5 bits to the exponent, capping its maximum representable value at $65,504$ and its minimum non-zero value at $6.10 \times 10^{-5}$. During backpropagation in deep networks, small gradient magnitudes easily underflow to zero, while large activation values overflow to $\infty$, causing loss divergence (`NaN`). Standard FP16 training requires complex dynamic loss scaling (`torch.cuda.amp.GradScaler`) to artificially shift gradient ranges.
 
-
-* **FP32 Dynamic Range Parity:** BF16 maintains the exact same 8-bit exponent as FP32, providing an identical dynamic range ($10^{-38}$ to $10^{38}$) at half the memory footprint. While BF16 trades off precision (7 mantissa bits vs. 10 in FP16), empirical evidence confirms that gradient descent is robust to minor mantissa truncation but highly sensitive to exponent clipping.
+- **FP32 Dynamic Range Parity:** BF16 maintains the exact same 8-bit exponent as FP32, providing an identical dynamic range ($10^{-38}$ to $10^{38}$) at half the memory footprint. While BF16 trades off precision (7 mantissa bits vs. 10 in FP16), empirical evidence confirms that gradient descent is robust to minor mantissa truncation but highly sensitive to exponent clipping.
 
 ---
 
@@ -153,14 +151,14 @@ Where $\Phi$ represents the total number of trainable model parameters.
 
 ### Component Allocations
 
-| Component | Precision | Size per Parameter | Allocation for 0.5B Model ($\Phi = 5 \times 10^8$) | Allocation for 7B Model ($\Phi = 7 \times 10^9$) |
-| --- | --- | --- | --- | --- |
-| **Model Weights ($\theta$)** | BF16 / FP16 | $2\text{ bytes}$ | $1.0\text{ GB}$ | $14.0\text{ GB}$ |
-| **Gradients ($\nabla \theta$)** | BF16 / FP16 | $2\text{ bytes}$ | $1.0\text{ GB}$ | $14.0\text{ GB}$ |
-| **AdamW Momentum ($m_t$)** | FP32 | $4\text{ bytes}$ | $2.0\text{ GB}$ | $28.0\text{ GB}$ |
-| **AdamW Variance ($v_t$)** | FP32 | $4\text{ bytes}$ | $2.0\text{ GB}$ | $28.0\text{ GB}$ |
-| **FP32 Master Weights** | FP32 | $4\text{ bytes}$ | $2.0\text{ GB}$ | $28.0\text{ GB}$ |
-| **Total Static Memory** | — | **$16\text{ bytes}$** | **$8.0\text{ GB}$** | **$112.0\text{ GB}$** |
+| Component                       | Precision   | Size per Parameter    | Allocation for 0.5B Model ($\Phi = 5 \times 10^8$) | Allocation for 7B Model ($\Phi = 7 \times 10^9$) |
+| ------------------------------- | ----------- | --------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| **Model Weights ($\theta$)**    | BF16 / FP16 | $2\text{ bytes}$      | $1.0\text{ GB}$                                    | $14.0\text{ GB}$                                 |
+| **Gradients ($\nabla \theta$)** | BF16 / FP16 | $2\text{ bytes}$      | $1.0\text{ GB}$                                    | $14.0\text{ GB}$                                 |
+| **AdamW Momentum ($m_t$)**      | FP32        | $4\text{ bytes}$      | $2.0\text{ GB}$                                    | $28.0\text{ GB}$                                 |
+| **AdamW Variance ($v_t$)**      | FP32        | $4\text{ bytes}$      | $2.0\text{ GB}$                                    | $28.0\text{ GB}$                                 |
+| **FP32 Master Weights**         | FP32        | $4\text{ bytes}$      | $2.0\text{ GB}$                                    | $28.0\text{ GB}$                                 |
+| **Total Static Memory**         | —           | **$16\text{ bytes}$** | **$8.0\text{ GB}$**                                | **$112.0\text{ GB}$**                            |
 
 ---
 
@@ -196,8 +194,8 @@ Unlike static memory, activation memory scales dynamically with **Batch Size ($B
 
 For standard attention kernels, the attention score matrix $S = Q K^T$ requires storing an explicit $B \times h \times T \times T$ tensor in memory.
 
-* As sequence length $T$ doubles, the memory required for self-attention activations **quadruples ($\mathcal{O}(T^2)$)**.
-* **FlashAttention Mitigation:** FlashAttention eliminates the intermediate $\mathcal{O}(T^2)$ HBM memory writes by fusing the softmax computation into SRAM tiles, reducing the peak activation memory footprint from $\mathcal{O}(T^2)$ to **$\mathcal{O}(T)$ linear scaling**.
+- As sequence length $T$ doubles, the memory required for self-attention activations **quadruples ($\mathcal{O}(T^2)$)**.
+- **FlashAttention Mitigation:** FlashAttention eliminates the intermediate $\mathcal{O}(T^2)$ HBM memory writes by fusing the softmax computation into SRAM tiles, reducing the peak activation memory footprint from $\mathcal{O}(T^2)$ to **$\mathcal{O}(T)$ linear scaling**.
 
 ---
 
@@ -225,22 +223,19 @@ Total Training Memory Allocation Breakdown:
 
 #### A. Pedagogical Model (MiniGPT on Shakespeare)
 
-* **Configuration:** $\Phi \approx 0.8\text{M params}$, $B = 64$, $T = 256$, $d_{\text{model}} = 128$, $L = 4$.
+- **Configuration:** $\Phi \approx 0.8\text{M params}$, $B = 64$, $T = 256$, $d_{\text{model}} = 128$, $L = 4$.
 
-
-* **Static Footprint:** $16 \text{ bytes} \times 800,000 = 12.8\text{ MB}$.
-* **Activation Footprint:** $\approx 45\text{ MB}$.
-* **Total VRAM Consumption:** $< 1.0\text{ GB}$ (easily trains on consumer GPUs such as NVIDIA T4 or Apple Silicon unified RAM).
-
-
+- **Static Footprint:** $16 \text{ bytes} \times 800,000 = 12.8\text{ MB}$.
+- **Activation Footprint:** $\approx 45\text{ MB}$.
+- **Total VRAM Consumption:** $< 1.0\text{ GB}$ (easily trains on consumer GPUs such as NVIDIA T4 or Apple Silicon unified RAM).
 
 #### B. Enterprise Model (`Qwen2.5-0.5B-Instruct`)
 
-* **Configuration:** $\Phi = 490\text{M params}$, $B = 4$, $T = 2048$, $d_{\text{model}} = 896$, $L = 24$.
-* **Static Footprint:** $16 \text{ bytes} \times 4.9 \times 10^8 = 7.84\text{ GB}$.
-* **Activation Footprint (without FlashAttention):** $\approx 4.60\text{ GB}$.
-* **Buffers & CUDA Overhead:** $\approx 1.50\text{ GB}$.
-* **Total VRAM Required:** $\approx 13.94\text{ GB}$ (requires a 16 GB or 24 GB GPU, such as an NVIDIA RTX 4090 or A10G).
+- **Configuration:** $\Phi = 490\text{M params}$, $B = 4$, $T = 2048$, $d_{\text{model}} = 896$, $L = 24$.
+- **Static Footprint:** $16 \text{ bytes} \times 4.9 \times 10^8 = 7.84\text{ GB}$.
+- **Activation Footprint (without FlashAttention):** $\approx 4.60\text{ GB}$.
+- **Buffers & CUDA Overhead:** $\approx 1.50\text{ GB}$.
+- **Total VRAM Required:** $\approx 13.94\text{ GB}$ (requires a 16 GB or 24 GB GPU, such as an NVIDIA RTX 4090 or A10G).
 
 ---
 

@@ -52,24 +52,17 @@ decode = lambda l: "".join([itos[i] for i in l])  # List[int] -> Text[cite: 8, 9
 
 ### Advantages
 
-* **Minimal Vocabulary Footprint:** $V$ is tightly bounded by the alphabet size ($V \approx 65\text{--}256$), minimizing embedding table memory ($M_{\text{emb}} = V \times d_{\text{model}}$).
+- **Minimal Vocabulary Footprint:** $V$ is tightly bounded by the alphabet size ($V \approx 65\text{--}256$), minimizing embedding table memory ($M_{\text{emb}} = V \times d_{\text{model}}$).
 
-
-* **Zero Out-of-Vocabulary (OOV) Tokens:** Any word composed of known alphabet characters can be represented without fallback tokens.
-
-
+- **Zero Out-of-Vocabulary (OOV) Tokens:** Any word composed of known alphabet characters can be represented without fallback tokens.
 
 ### Architectural Limitations
 
-* **Sequence Expansion:** Words expand into multiple tokens (e.g., `"Transformation"` requires 14 discrete sequence steps), consuming context window capacity rapidly.
+- **Sequence Expansion:** Words expand into multiple tokens (e.g., `"Transformation"` requires 14 discrete sequence steps), consuming context window capacity rapidly.
 
+- **Quadratic Memory Multiplier:** A 256-token character context represents only a single short paragraph, yet requires full attention matrix computations ($256 \times 256$).
 
-* **Quadratic Memory Multiplier:** A 256-token character context represents only a single short paragraph, yet requires full attention matrix computations ($256 \times 256$).
-
-
-* **Representational Burden:** The Transformer must expend multiple layers simply learning basic orthography and syllable formation before modeling high-level semantic dependencies.
-
-
+- **Representational Burden:** The Transformer must expend multiple layers simply learning basic orthography and syllable formation before modeling high-level semantic dependencies.
 
 ---
 
@@ -97,10 +90,7 @@ In data-constrained training regimes, this causes two critical structural failur
 
 1. **Orthographic Fragmentation ("Token Stuttering"):** Rare or compound words are fragmented into low-frequency sub-tokens. Lacking sufficient sampling density to model transitions between these rare fragments, inference outputs stuttered strings (e.g., `v ir t u ous`).
 
-
 2. **Syntactic Whitespace Isolation:** By treating whitespace as an external splitting boundary rather than a learnable character, whitespace tokens become isolated from word bodies. During inference, the model fails to learn spatial syntax, producing missing spaces or irregular gaps between words.
-
-
 
 ---
 
@@ -142,26 +132,22 @@ data = torch.tensor(enc.encode(raw_text).ids, dtype=torch.long)  #[cite: 7]
 
 1. **Internalization of Structural Delimiters:** Spaces and newlines are encoded as native byte prefixes (represented visually as `Ġ` in HuggingFace tokenizers) directly attached to sub-word units. Words like `" Romeo"` and `"Romeo"` are treated as distinct contextual entities, preserving natural spacing throughout inference.
 
-
 2. **Absolute OOV Immunity:** Because the base vocabulary contains all 256 possible single-byte values, any arbitrary Unicode character, foreign language script, emoji, or corrupted byte sequence can be represented as a sequence of base bytes without requiring fallback tokens (`<unk>`).
 
-
 3. **High Information Density:** Common words and morphological roots compress into single tokens, shortening sequence length $T$ and maximizing attention context efficiency.
-
-
 
 ---
 
 ## 5. Tokenization Paradigm Comparison Matrix
 
-| Evaluation Dimension | Character-Level | Standard Word-Level | Standard BPE (Whitespace Split) | Byte-Level BPE (BBPE) |
-| --- | --- | --- | --- | --- |
-| **Base Alphabet** | Unique characters in corpus ($V \approx 65$) | Full distinct words | Unique characters | **256 raw UTF-8 bytes**<br> |
-| **Vocabulary Size ($V$)** | Extremely Small ($65\text{--}256$) | Extremely Large ($100\text{k}\text{--}1\text{M}$) | Configurable ($1\text{k}\text{--}50\text{k}$) | **Configurable ($256\text{--}150\text{k}$)**<br> |
-| **Sequence Length ($T$)** | Very Long ($4\text{--}6\times$ sub-word length) | Shortest | Moderate | **Compact ($1.2\text{--}1.5\text{ tokens/word}$)**<br> |
-| **OOV Handling** | Perfect (no `<unk>`) | Catastrophic failure | Sub-token fallback | **100% Guaranteed via base bytes**<br> |
-| **Whitespace Handling** | Explicit character token (`' '`) | Stripped as delimiter | Isolated syntax boundary | **Internalized within byte prefixes**<br> |
-| **Embedding Table Memory** | Negligible | Severe memory bloat | High if $V$ unconstrained | **Balanced ($V \times d_{\text{model}}$)**<br> |
+| Evaluation Dimension       | Character-Level                                 | Standard Word-Level                               | Standard BPE (Whitespace Split)               | Byte-Level BPE (BBPE)                                  |
+| -------------------------- | ----------------------------------------------- | ------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------ |
+| **Base Alphabet**          | Unique characters in corpus ($V \approx 65$)    | Full distinct words                               | Unique characters                             | **256 raw UTF-8 bytes**<br>                            |
+| **Vocabulary Size ($V$)**  | Extremely Small ($65\text{--}256$)              | Extremely Large ($100\text{k}\text{--}1\text{M}$) | Configurable ($1\text{k}\text{--}50\text{k}$) | **Configurable ($256\text{--}150\text{k}$)**<br>       |
+| **Sequence Length ($T$)**  | Very Long ($4\text{--}6\times$ sub-word length) | Shortest                                          | Moderate                                      | **Compact ($1.2\text{--}1.5\text{ tokens/word}$)**<br> |
+| **OOV Handling**           | Perfect (no `<unk>`)                            | Catastrophic failure                              | Sub-token fallback                            | **100% Guaranteed via base bytes**<br>                 |
+| **Whitespace Handling**    | Explicit character token (`' '`)                | Stripped as delimiter                             | Isolated syntax boundary                      | **Internalized within byte prefixes**<br>              |
+| **Embedding Table Memory** | Negligible                                      | Severe memory bloat                               | High if $V$ unconstrained                     | **Balanced ($V \times d_{\text{model}}$)**<br>         |
 
 ---
 

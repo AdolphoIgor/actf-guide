@@ -72,29 +72,29 @@ Qualitative probes are categorized into five functional archetypes, each targeti
 
 Evaluates whether the model's outputs parse cleanly under formal grammar engines without human post-processing:
 
-* **JSON Conformance:** `json.loads(output)` must succeed; key names and types must match expected schema definitions.
-* **Code AST Parsing:** Output wrapped in code fences must successfully compile into an Abstract Syntax Tree via `ast.parse(code)` without throwing `SyntaxError`.
+- **JSON Conformance:** `json.loads(output)` must succeed; key names and types must match expected schema definitions.
+- **Code AST Parsing:** Output wrapped in code fences must successfully compile into an Abstract Syntax Tree via `ast.parse(code)` without throwing `SyntaxError`.
 
 ### 2. Deterministic Reasoning & Exact Match Probes
 
 Tests multi-step symbolic and arithmetic deduction where only a single valid answer exists:
 
-* Multi-digit integer arithmetic (e.g., $147 \times 23 = 3381$).
-* Algorithmic trace execution (e.g., "Given list $[3, 1, 4]$, what is the result of `sorted(list)[1]`?").
+- Multi-digit integer arithmetic (e.g., $147 \times 23 = 3381$).
+- Algorithmic trace execution (e.g., "Given list $[3, 1, 4]$, what is the result of `sorted(list)[1]`?").
 
 ### 3. Negative Constraint Adherence Probes
 
 Standard autoregressive generation biases models toward high-frequency token associations. Negative constraints test whether the attention mechanism can suppress default priors:
 
-* *Constraint Prompt:* "Explain photosynthesis in exactly three sentences. Do not use the letter 'e'."
-* *Assertion:* Output sentence count must equal 3; total count of character `'e'` or `'E'` must equal 0.
+- _Constraint Prompt:_ "Explain photosynthesis in exactly three sentences. Do not use the letter 'e'."
+- _Assertion:_ Output sentence count must equal 3; total count of character `'e'` or `'E'` must equal 0.
 
 ### 4. Turn Delimitation & EOS Integrity Probes
 
 Ensures that instruction-tuned models terminate decoding promptly when completing a turn:
 
-* *Prompt:* Input formatted with standard dialogue markers (e.g., `<|im_start|>user\nWhat is the capital of Japan?<|im_end|>\n<|im_start|>assistant\n`).
-* *Assertion:* Generation must terminate on `<|im_end|>` or `</s>` within $\le 10$ tokens without leaking `<|im_start|>user` headers.
+- _Prompt:_ Input formatted with standard dialogue markers (e.g., `<|im_start|>user\nWhat is the capital of Japan?<|im_end|>\n<|im_start|>assistant\n`).
+- _Assertion:_ Generation must terminate on `<|im_end|>` or `</s>` within $\le 10$ tokens without leaking `<|im_start|>user` headers.
 
 ---
 
@@ -151,8 +151,8 @@ Pass Rate (%)
 
 ### Probing as an Early Warning System
 
-* **Pre-Divergence Detection:** Behavioral pass rates frequently collapse 1,000–3,000 steps *before* validation loss indicates an issue.
-* **Checkpoint Selection:** If Checkpoint $A$ (Step 40k) has validation loss $1.52$ and Reasoning Pass Rate $88\%$, while Checkpoint $B$ (Step 50k) has validation loss $1.49$ but Reasoning Pass Rate $45\%$, the probing harness prevents promoting the degraded Checkpoint $B$.
+- **Pre-Divergence Detection:** Behavioral pass rates frequently collapse 1,000–3,000 steps _before_ validation loss indicates an issue.
+- **Checkpoint Selection:** If Checkpoint $A$ (Step 40k) has validation loss $1.52$ and Reasoning Pass Rate $88\%$, while Checkpoint $B$ (Step 50k) has validation loss $1.49$ but Reasoning Pass Rate $45\%$, the probing harness prevents promoting the degraded Checkpoint $B$.
 
 ---
 
@@ -160,7 +160,7 @@ Pass Rate (%)
 
 Below is the production implementation of a modular probing harness executing schema parsing, AST compilation, negative constraint scanning, exact match arithmetic, and generating a structured scorecard:
 
-```python
+````python
 import ast
 import json
 import re
@@ -326,7 +326,7 @@ class QualitativeProbingHarness:
     ) -> Dict[str, Any]:
         """
         Executes all registered probes against the provided model generation function.
-        
+
         Args:
             generate_fn: Callable taking (prompt, temperature, max_new_tokens) -> output_text
         """
@@ -394,7 +394,7 @@ class QualitativeProbingHarness:
 
         return scorecard
 
-```
+````
 
 ---
 
@@ -402,10 +402,10 @@ class QualitativeProbingHarness:
 
 Before any continuous training checkpoint is promoted to validation scoring or deployment consideration, it must satisfy minimum category thresholds:
 
-| Category | Primary Test Mechanism | Min Pass Threshold | Action on Failure |
-| --- | --- | --- | --- |
-| **Schema Integrity** | `json.loads` & `ast.parse` | **$100\%$ Strict** | Reject checkpoint; formatting corrupted |
-| **Turn Delimitation** | Substring `< | im_start | >` & EOS |
-| **Deterministic Reasoning** | Numeric Regex / Exact Match | **$\ge 85\%$** | Flag warning; check reasoning degradation |
-| **Negative Constraints** | Banned character & token search | **$\ge 75\%$** | Flag warning; check instruction drift |
-| **Factual Invariance** | Gold QA exact substring match | **$\ge 80\%$** | Check for catastrophic domain forgetting |
+| Category                    | Primary Test Mechanism          | Min Pass Threshold | Action on Failure                         |
+| --------------------------- | ------------------------------- | ------------------ | ----------------------------------------- |
+| **Schema Integrity**        | `json.loads` & `ast.parse`      | **$100\%$ Strict** | Reject checkpoint; formatting corrupted   |
+| **Turn Delimitation**       | Substring `<                    | im_start           | >` & EOS                                  |
+| **Deterministic Reasoning** | Numeric Regex / Exact Match     | **$\ge 85\%$**     | Flag warning; check reasoning degradation |
+| **Negative Constraints**    | Banned character & token search | **$\ge 75\%$**     | Flag warning; check instruction drift     |
+| **Factual Invariance**      | Gold QA exact substring match   | **$\ge 80\%$**     | Check for catastrophic domain forgetting  |

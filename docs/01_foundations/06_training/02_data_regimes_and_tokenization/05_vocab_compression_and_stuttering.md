@@ -21,13 +21,9 @@ Compressed Dense Vocabulary Output (Coherent Synthesis):
 
 1. **Sampling Sparsity & Zipf's Law:** When an expansive vocabulary ($V \ge 1000$) is trained on a small corpus (~1MB text), the BPE merge algorithm generates highly specific, specialized sub-tokens that occur only once or twice across the entire dataset.
 
-
 2. **Grammatical Transition Failure:** The Transformer relies on observing thousands of token transitions to model valid grammatical probabilities. With low-frequency tokens, the model lacks sufficient sampling density to learn the transition dynamics between rare sub-word components.
 
-
 3. **Representational Babbling:** During autoregressive decoding, the probability distribution over these sparse tokens degenerates into high-entropy noise, causing the model to get trapped in cyclical, fragmented token emissions.
-
-
 
 ---
 
@@ -53,12 +49,9 @@ Total Parameters: ~13.66M  |  Parameters in Language Processing Core: Only 5.8%
 
 When the output linear layer must project a narrow hidden state vector ($d_{\text{model}} = 128$) into tens of thousands of output logits, gradient descent becomes mathematically unstable:
 
-* The Cross-Entropy loss is evaluated across thousands of unobserved token classes on every step.
+- The Cross-Entropy loss is evaluated across thousands of unobserved token classes on every step.
 
-
-* The softmax denominator sums over tens of thousands of near-zero logits, causing gradient volatility, saturation of local minima, or rapid divergence (`loss = NaN`).
-
-
+- The softmax denominator sums over tens of thousands of near-zero logits, causing gradient volatility, saturation of local minima, or rapid divergence (`loss = NaN`).
 
 ---
 
@@ -168,24 +161,24 @@ class CompactLanguageModel(nn.Module):
     def __init__(self, vocab_size: int = 512, n_embd: int = 128, block_size: int = 256, n_layer: int = 4, n_head: int = 4):
         super().__init__()
         self.block_size = block_size
-        
+
         # Token & Positional Embeddings
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        
+
         # Transformer Backbone
         self.blocks = nn.Sequential(*[
             TransformerBlock(n_embd=n_embd, n_head=n_head, block_size=block_size)
             for _ in range(n_layer)
         ])
         self.ln_f = nn.LayerNorm(n_embd)
-        
+
         # Output Projection Head
         self.lm_head = nn.Linear(n_embd, vocab_size, bias=False)
-        
+
         # SYMMETRIC WEIGHT TYING: Direct tensor reference sharing
         self.lm_head.weight = self.token_embedding_table.weight
-        
+
         # Strict normal initialization (mu=0.0, sigma=0.02)
         self.apply(self._init_weights)
 
@@ -197,7 +190,7 @@ class CompactLanguageModel(nn.Module):
         B, T = idx.shape
         tok_emb = self.token_embedding_table(idx) # (B, T, n_embd)
         pos_emb = self.position_embedding_table(torch.arange(T, device=idx.device)) # (T, n_embd)
-        
+
         x = tok_emb + pos_emb
         x = self.blocks(x)
         x = self.ln_f(x)
@@ -217,11 +210,11 @@ class CompactLanguageModel(nn.Module):
             # Crop to context window
             idx_cond = idx[:, -self.block_size:]
             logits, _ = self(idx_cond)
-            
+
             # Focus on last predicted token and scale by temperature
             logits = logits[:, -1, :] / temperature
             probs = F.softmax(logits, dim=-1)
-            
+
             # Stochastic multinomial sampling
             idx_next = torch.multinomial(probs, num_samples=1)
             idx = torch.cat((idx, idx_next), dim=1)
@@ -235,10 +228,10 @@ class CompactLanguageModel(nn.Module):
 
 Training a compressed 512-vocabulary model against an uncompressed 50k-vocabulary model on a 1MB dataset yields distinct empirical trajectories:
 
-| Metric / Behavior | Uncompressed Vocab ($V = 50,257$) | Compressed Vocab ($V = 512$) |
-| --- | --- | --- |
-| **Initial Loss Step 0** | $\mathcal{L} \approx \ln(50257) = 10.82$ | $\mathcal{L} \approx \ln(512) = 6.24$<br> |
-| **Parametric Footprint** | $13.6\text{M parameters}$ (Hypertrophic) | **$0.85\text{M parameters}$ (Optimal)**<br> |
-| **Overfitting Threshold** | Diverges after $< 200$ iterations | Generalizes smoothly across $30\text{k}+$ steps |
+| Metric / Behavior           | Uncompressed Vocab ($V = 50,257$)                  | Compressed Vocab ($V = 512$)                                         |
+| --------------------------- | -------------------------------------------------- | -------------------------------------------------------------------- |
+| **Initial Loss Step 0**     | $\mathcal{L} \approx \ln(50257) = 10.82$           | $\mathcal{L} \approx \ln(512) = 6.24$<br>                            |
+| **Parametric Footprint**    | $13.6\text{M parameters}$ (Hypertrophic)           | **$0.85\text{M parameters}$ (Optimal)**<br>                          |
+| **Overfitting Threshold**   | Diverges after $< 200$ iterations                  | Generalizes smoothly across $30\text{k}+$ steps                      |
 | **Validation Loss Plateau** | Stagnates at $\mathcal{L}_{\text{val}} > 4.50$<br> | Reaches stable valley at $\mathcal{L}_{\text{val}} \approx 2.75$<br> |
-| **Inference Coherence** | Severe stuttering (`v ir t u ous`) | Syntactically cohesive English output |
+| **Inference Coherence**     | Severe stuttering (`v ir t u ous`)                 | Syntactically cohesive English output                                |

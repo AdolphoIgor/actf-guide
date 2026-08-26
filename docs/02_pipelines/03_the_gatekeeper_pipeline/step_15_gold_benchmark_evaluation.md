@@ -111,7 +111,7 @@ Where $\delta_{\text{regress}} = 0.005$ ($0.5\%$ maximum allowable capability de
 
 Below is the complete standalone implementation of the `GoldBenchmarkEvaluator` supporting multiple-choice log-likelihood evaluation, Chain-of-Thought math extraction, sandboxed code execution, schema validation, and composite scorecard generation:
 
-```python
+````python
 import ast
 import json
 import math
@@ -258,7 +258,7 @@ class GoldBenchmarkEvaluator:
                     logits = self.model(curr_tokens)
                     if isinstance(logits, tuple):
                         logits = logits[0]
-                
+
                 next_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
                 curr_tokens = torch.cat([curr_tokens, next_token], dim=1)
 
@@ -473,7 +473,7 @@ class GoldBenchmarkEvaluator:
             "eval_duration_sec": duration
         }
 
-```
+````
 
 ---
 
@@ -502,10 +502,10 @@ class GoldBenchmarkEvaluator:
 
 ## 6. Diagnostic Failure Matrix
 
-| Failure Symptom | Detection Point | Root Cause | Engineering Remediation |
-| --- | --- | --- | --- |
-| **Schema Syntax Rate $< 100\%$** | JSON / AST Validation | Loss masking omitted formatting tokens or SFT data polluted | Enforce loss on delimiter tokens; inspect formatting SFT shards |
-| **Math Exact Match $\to 0\%$** | GSM8K Generative CoT | Loss of Chain-of-Thought reasoning structure | Verify CoT exemplar prompts; check for learning rate collapse |
-| **Code Execution Timeout** | HumanEval Subprocess Runner | Infinite loops in generated code syntax | Terminate process; adjust repetition penalties on while/for loops |
-| **MC Log-Likelihood Regression** | Length-Normalized MMLU | Knowledge forgetting during aggressive domain fine-tuning | Add general pre-training replay shards ($5\text{--}10\%$ mixture) |
-| **Composite Score Stagnation** | Multi-Task Aggregation | Model capacity saturated under current learning rate | Trigger learning rate decay or scale hidden parameter budget |
+| Failure Symptom                  | Detection Point             | Root Cause                                                  | Engineering Remediation                                           |
+| -------------------------------- | --------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Schema Syntax Rate $< 100\%$** | JSON / AST Validation       | Loss masking omitted formatting tokens or SFT data polluted | Enforce loss on delimiter tokens; inspect formatting SFT shards   |
+| **Math Exact Match $\to 0\%$**   | GSM8K Generative CoT        | Loss of Chain-of-Thought reasoning structure                | Verify CoT exemplar prompts; check for learning rate collapse     |
+| **Code Execution Timeout**       | HumanEval Subprocess Runner | Infinite loops in generated code syntax                     | Terminate process; adjust repetition penalties on while/for loops |
+| **MC Log-Likelihood Regression** | Length-Normalized MMLU      | Knowledge forgetting during aggressive domain fine-tuning   | Add general pre-training replay shards ($5\text{--}10\%$ mixture) |
+| **Composite Score Stagnation**   | Multi-Task Aggregation      | Model capacity saturated under current learning rate        | Trigger learning rate decay or scale hidden parameter budget      |

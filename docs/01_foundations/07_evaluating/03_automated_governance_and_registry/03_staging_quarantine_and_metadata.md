@@ -139,9 +139,21 @@ Production Artifact Bundle Layout:
     "verdict": "PASSED",
     "gate5_timestamp": "2026-08-23T04:15:22Z",
     "evaluated_benchmarks": {
-      "mmlu_5shot": { "baseline": 0.682, "candidate": 0.694, "mcnemar_p": 0.081 },
-      "gsm8k_cot": { "baseline": 0.541, "candidate": 0.562, "mcnemar_p": 0.042 },
-      "humaneval_pass1": { "baseline": 0.421, "candidate": 0.439, "ci_lower": 0.002 }
+      "mmlu_5shot": {
+        "baseline": 0.682,
+        "candidate": 0.694,
+        "mcnemar_p": 0.081
+      },
+      "gsm8k_cot": {
+        "baseline": 0.541,
+        "candidate": 0.562,
+        "mcnemar_p": 0.042
+      },
+      "humaneval_pass1": {
+        "baseline": 0.421,
+        "candidate": 0.439,
+        "ci_lower": 0.002
+      }
     },
     "calibration": {
       "expected_calibration_error": 0.038,
@@ -155,7 +167,6 @@ Production Artifact Bundle Layout:
     }
   }
 }
-
 ```
 
 ---

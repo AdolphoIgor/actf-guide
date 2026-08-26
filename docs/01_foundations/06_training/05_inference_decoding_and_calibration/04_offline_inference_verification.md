@@ -37,16 +37,13 @@ A common failure mode in custom inference engines is **KV-cache divergence**, wh
 
 Let $X = (x_1, x_2, \dots, x_T)$ be a sequence of token IDs.
 
-* Let $Z_{\text{naive}} \in \mathbb{R}^{T \times V}$ be the logits produced by a standard full-sequence forward pass without caching:
+- Let $Z_{\text{naive}} \in \mathbb{R}^{T \times V}$ be the logits produced by a standard full-sequence forward pass without caching:
 
 $$Z_{\text{naive}} = \text{Model}(X)$$
 
-
-* Let $Z_{\text{cached}} \in \mathbb{R}^{T \times V}$ be the logits produced by sequentially feeding tokens $x_t$ one by one while maintaining an active KV cache:
+- Let $Z_{\text{cached}} \in \mathbb{R}^{T \times V}$ be the logits produced by sequentially feeding tokens $x_t$ one by one while maintaining an active KV cache:
 
 $$z_{t, \text{cached}} = \text{Model}(x_t, \text{kv\_cache}_{<t})$$
-
-
 
 The implementation satisfies **Logit Parity** if and only if the maximum absolute difference across all sequence positions and vocabulary coordinates is bounded by machine precision tolerance $\epsilon$:
 
@@ -54,8 +51,8 @@ $$\Delta_{\text{max}} = \max_{1 \le t \le T} \max_{1 \le v \le V} \left\vert{} Z
 
 Where:
 
-* $\epsilon = 10^{-5}$ for Float32 precision.
-* $\epsilon = 10^{-3}$ for BFloat16 precision.
+- $\epsilon = 10^{-5}$ for Float32 precision.
+- $\epsilon = 10^{-3}$ for BFloat16 precision.
 
 ```text
 Logit Parity Test Flow:
@@ -114,10 +111,10 @@ To detect catastrophic forgetting or behavioral regressions across training iter
 
 The Gold Suite consists of curated test cases representing foundational capabilities:
 
-* **Syntax & Code Structure:** Syntactic correctness of generated Python/SQL code (AST validity).
-* **Deterministic Reasoning:** Mathematical arithmetic and symbolic logic prompts with exact ground-truth solutions.
-* **Instruction Constraint Following:** Strict adherence to negative constraints (e.g., "Answer in exactly 3 bullet points without mentioning the word 'blue'").
-* **Schema Conformance:** Generating structured outputs that adhere strictly to predefined JSON schemas.
+- **Syntax & Code Structure:** Syntactic correctness of generated Python/SQL code (AST validity).
+- **Deterministic Reasoning:** Mathematical arithmetic and symbolic logic prompts with exact ground-truth solutions.
+- **Instruction Constraint Following:** Strict adherence to negative constraints (e.g., "Answer in exactly 3 bullet points without mentioning the word 'blue'").
+- **Schema Conformance:** Generating structured outputs that adhere strictly to predefined JSON schemas.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -183,7 +180,7 @@ $$M_{\text{peak}} = M_{\text{weights}} + M_{\text{KV\_cache}}(B, L) + M_{\text{w
 
 Below is the standalone Python verification engine automating KV-cache logit parity testing, delimiter compliance verification, and performance profiling:
 
-```python
+````python
 import ast
 import json
 import time
@@ -279,7 +276,7 @@ class OfflineInferenceVerifier:
                 dtype=torch.long,
                 device=self.device
             )
-            
+
             curr_tokens = input_ids
             cache = None
             emitted_eos = False
@@ -288,7 +285,7 @@ class OfflineInferenceVerifier:
                 # Single token step
                 token_to_forward = curr_tokens if cache is None else curr_tokens[:, -1:]
                 logits, cache = self.model(token_to_forward, kv_cache=cache, use_cache=True)
-                
+
                 # Greedy selection
                 next_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
                 curr_tokens = torch.cat([curr_tokens, next_token], dim=1)
@@ -326,7 +323,7 @@ class OfflineInferenceVerifier:
         """
         for i, prompt in enumerate(coding_prompts):
             completion = generate_fn(prompt)
-            
+
             # Extract code between fences if present
             if "```python" in completion:
                 code = completion.split("```python")[1].split("```")[0].strip()
@@ -385,7 +382,7 @@ class OfflineInferenceVerifier:
             if self.device == "cuda":
                 torch.cuda.synchronize()
             t_step_end = time.perf_counter()
-            
+
             decode_latencies.append((t_step_end - t_step_start) * 1000.0)
             current_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
 
@@ -409,7 +406,7 @@ class OfflineInferenceVerifier:
         )
         return metrics
 
-```
+````
 
 ---
 
@@ -417,11 +414,11 @@ class OfflineInferenceVerifier:
 
 Before moving a checkpoint to the production serving registry, all verification items must evaluate to **PASS**:
 
-| Audit Domain | Test Target | Verification Mechanism | Acceptance Ceiling | Action on Failure |
-| --- | --- | --- | --- | --- |
-| **Cache Integrity** | KV-Cache Logit Parity | Sequential vs. Full Forward pass delta | $\Delta_{\text{max}} < 10^{-3}$ (BF16) | Halt deployment; inspect RoPE offsets |
-| **Turn Termination** | EOS / `< | im_end | >` Delimiter | Output stream scan on 100 Gold Prompts |
-| **Code Syntax** | AST Conformance | `ast.parse()` on Python code outputs | $100\%$ valid AST | Reject release; review coding SFT data |
-| **Schema Strictness** | Structured JSON/SQL | `json.loads()` on JSON tasks | $100\%$ valid JSON | Reject release; tune prompt formatting |
-| **Serving SLA** | Hardware Latency | ITL / Throughput profiling | $\text{ITL} \le \text{SLA Limit}$ | Alert hardware team; check quantization |
-| **VRAM Safety** | Peak Memory Footprint | `torch.cuda.max_memory_allocated()` | $\le 90\%$ GPU Memory | Block batch size promotion; optimize GQA |
+| Audit Domain          | Test Target           | Verification Mechanism                 | Acceptance Ceiling                     | Action on Failure                        |
+| --------------------- | --------------------- | -------------------------------------- | -------------------------------------- | ---------------------------------------- |
+| **Cache Integrity**   | KV-Cache Logit Parity | Sequential vs. Full Forward pass delta | $\Delta_{\text{max}} < 10^{-3}$ (BF16) | Halt deployment; inspect RoPE offsets    |
+| **Turn Termination**  | EOS / `<              | im_end                                 | >` Delimiter                           | Output stream scan on 100 Gold Prompts   |
+| **Code Syntax**       | AST Conformance       | `ast.parse()` on Python code outputs   | $100\%$ valid AST                      | Reject release; review coding SFT data   |
+| **Schema Strictness** | Structured JSON/SQL   | `json.loads()` on JSON tasks           | $100\%$ valid JSON                     | Reject release; tune prompt formatting   |
+| **Serving SLA**       | Hardware Latency      | ITL / Throughput profiling             | $\text{ITL} \le \text{SLA Limit}$      | Alert hardware team; check quantization  |
+| **VRAM Safety**       | Peak Memory Footprint | `torch.cuda.max_memory_allocated()`    | $\le 90\%$ GPU Memory                  | Block batch size promotion; optimize GQA |

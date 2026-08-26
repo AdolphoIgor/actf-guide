@@ -65,8 +65,7 @@ Step 9 processes re-converged data streams through a two-part safety and redacti
 
 $$\text{Entity Tag} \in \{\text{B-PER}, \text{I-PER}, \text{B-LOC}, \text{I-LOC}, \text{B-ORG}, \text{I-ORG}\}$$
 
-
-3. **Immutable Entity Tag Swap:** Matched text arrays are sliced, replacing identified private identifiers with immutable generic entity tags (e.g., `[REDACTED_EMAIL]`, `[REDACTED_NAME]`, `[REDACTED_ADDRESS]`).
+1. **Immutable Entity Tag Swap:** Matched text arrays are sliced, replacing identified private identifiers with immutable generic entity tags (e.g., `[REDACTED_EMAIL]`, `[REDACTED_NAME]`, `[REDACTED_ADDRESS]`).
 
 ### Part B: Localized Toxicity Filtering & Quarantine Routing
 
@@ -74,30 +73,28 @@ $$\text{Entity Tag} \in \{\text{B-PER}, \text{I-PER}, \text{B-LOC}, \text{I-LOC}
 
 $$\mathbf{P}_{\text{toxic}}(x) = \left[ P_{\text{hate}}, P_{\text{harassment}}, P_{\text{sexual}}, P_{\text{profanity}} \right] \in [0.0, 1.0]^4$$
 
-
-2. **Threshold Gatekeeping:** If the maximum score across any toxicity vector crosses the enterprise threshold, the document fails the safety gate:
+1. **Threshold Gatekeeping:** If the maximum score across any toxicity vector crosses the enterprise threshold, the document fails the safety gate:
 
 $$\text{Safety Boundary}: \max \left( \mathbf{P}_{\text{toxic}}(x) \right) > 0.40$$
 
-
-3. **Compliance Quarantine Isolation:** Records flagged for extreme toxicity are redirected to a secure, write-only compliance quarantine path. This maintains an immutable paper trail for corporate governance teams to audit data source liabilities, completely isolated from the training infrastructure.
+1. **Compliance Quarantine Isolation:** Records flagged for extreme toxicity are redirected to a secure, write-only compliance quarantine path. This maintains an immutable paper trail for corporate governance teams to audit data source liabilities, completely isolated from the training infrastructure.
 
 ---
 
 ## 4. Safety & Redaction Strategy Matrix
 
-| Safety Hazard | Detection Mechanism | Theoretical Signature / Threshold | Pipeline Action | Downstream Impact in Phase 3 |
-| --- | --- | --- | --- | --- |
-| **Structured PII** (Emails, SSNs, Credit Cards) | Compiled Regular Expression Engine | Deterministic alphanumeric grammar match | **Masked:** Replaced with immutable tag (`[REDACTED_EMAIL]`). | Prevents verbatim memorization of structured identifiers. |
-| **Contextual PII** (Human Names, Addresses) | Token-Level NER Transformer Model | Entity boundary match ($\text{B-PER}, \text{I-PER}$) | **Masked:** Replaced with immutable tag (`[REDACTED_NAME]`). | Eliminates privacy leakage while preserving grammatical structure. |
-| **Benign Prose / Technical Code** | Sequence Toxicity Classifier | $\max\left(\mathbf{P}_{\text{toxic}}\right) \le 0.40$ | **Retained:** Advances to Step 10. | Re-converged into Phase 3 for decontamination. |
-| **Toxic Content** (Hate Speech, Harassment) | Multi-Vector Toxicity Classifier | $\max\left(\mathbf{P}_{\text{toxic}}\right) > 0.40$ | **Quarantined:** Routed to compliance audit directory. | Protects model alignment and maintains an auditable risk trail. |
+| Safety Hazard                                   | Detection Mechanism                | Theoretical Signature / Threshold                     | Pipeline Action                                               | Downstream Impact in Phase 3                                       |
+| ----------------------------------------------- | ---------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Structured PII** (Emails, SSNs, Credit Cards) | Compiled Regular Expression Engine | Deterministic alphanumeric grammar match              | **Masked:** Replaced with immutable tag (`[REDACTED_EMAIL]`). | Prevents verbatim memorization of structured identifiers.          |
+| **Contextual PII** (Human Names, Addresses)     | Token-Level NER Transformer Model  | Entity boundary match ($\text{B-PER}, \text{I-PER}$)  | **Masked:** Replaced with immutable tag (`[REDACTED_NAME]`).  | Eliminates privacy leakage while preserving grammatical structure. |
+| **Benign Prose / Technical Code**               | Sequence Toxicity Classifier       | $\max\left(\mathbf{P}_{\text{toxic}}\right) \le 0.40$ | **Retained:** Advances to Step 10.                            | Re-converged into Phase 3 for decontamination.                     |
+| **Toxic Content** (Hate Speech, Harassment)     | Multi-Vector Toxicity Classifier   | $\max\left(\mathbf{P}_{\text{toxic}}\right) > 0.40$   | **Quarantined:** Routed to compliance audit directory.        | Protects model alignment and maintains an auditable risk trail.    |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Hybrid PII Redaction Frameworks:** Enterprise engines combining compiled regular expression matchers with localized, token-level NER models for comprehensive privacy masking.
-* **Token-Level Entity Classifiers:** Transformer models fine-tuned for sequence labeling to output precise token entity boundaries ($\text{B-PER}, \text{I-PER}, \text{B-LOC}$).
-* **Multi-Label Toxicity Classifiers:** High-throughput sequence classification models compiled for fast inference to evaluate multi-vector toxicity distributions.
-* **Auditable Quarantine Routers:** Workflow orchestration hooks configured to intercept non-compliant payloads and direct them to secure, write-only compliance storage paths.
+- **Hybrid PII Redaction Frameworks:** Enterprise engines combining compiled regular expression matchers with localized, token-level NER models for comprehensive privacy masking.
+- **Token-Level Entity Classifiers:** Transformer models fine-tuned for sequence labeling to output precise token entity boundaries ($\text{B-PER}, \text{I-PER}, \text{B-LOC}$).
+- **Multi-Label Toxicity Classifiers:** High-throughput sequence classification models compiled for fast inference to evaluate multi-vector toxicity distributions.
+- **Auditable Quarantine Routers:** Workflow orchestration hooks configured to intercept non-compliant payloads and direct them to secure, write-only compliance storage paths.

@@ -104,23 +104,23 @@ class TransformerEmbedding(nn.Module):
         super().__init__()
         # Token Identity Table (What token is this?)
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
-        
+
         # Positional Coordinate Table (Where is this token located?)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        
+
     def forward(self, idx: torch.Tensor) -> torch.Tensor:
         # idx shape: (Batch_Size, Sequence_Length) -> (B, T)
         B, T = idx.shape
-        
+
         # 1. Retrieve semantic token embeddings: (B, T, n_embd)
         tok_emb = self.token_embedding_table(idx)
-        
+
         # 2. Generate integer range [0, 1, 2, ..., T-1] matching sequence length
         positions = torch.arange(T, device=idx.device) # Shape: (T,)
-        
+
         # 3. Retrieve spatial position embeddings: (T, n_embd)
         pos_emb = self.position_embedding_table(positions)
-        
+
         # 4. Broadcast addition: (B, T, n_embd) + (T, n_embd) -> (B, T, n_embd)
         x = tok_emb + pos_emb
         return x
@@ -141,9 +141,9 @@ class TransformerEmbedding(nn.Module):
 
 While absolute learned positional embeddings are computationally efficient and simple to implement, they impose strict structural limitations:
 
-| Attribute | Absolute Learned Embeddings | Operational Impact |
-| --- | --- | --- |
-| **Context Extrapolation** | Hard failure at $T > \text{block\_size}$ | The model cannot process sequences longer than the defined table size. Inference on $T = \text{block\_size} + 1$ throws an `IndexError`. |
-| **Relative Distance Bias** | No explicit relative formulation | The model must empirically learn that $\text{dist}(p_1, p_2) = \text{dist}(p_3, p_4) = 1$. It does not encode shift invariance $\Delta = i - j$ mathematically. |
-| **Parameter Overhead** | Scales linearly: $O(\text{block\_size} \times d_{\text{model}})$ | For long-context models ($L = 32\text{k}\text{--}128\text{k}$), static positional lookup tables consume excessive memory. |
-| **Downstream Evolution** | Replaced by RoPE / ALiBi in modern LLMs | Contemporary architectures (e.g., Llama-3, Qwen-2.5) replace learned absolute embeddings with Rotary Position Embeddings (RoPE) to enable length generalization. |
+| Attribute                  | Absolute Learned Embeddings                                      | Operational Impact                                                                                                                                               |
+| -------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Context Extrapolation**  | Hard failure at $T > \text{block\_size}$                         | The model cannot process sequences longer than the defined table size. Inference on $T = \text{block\_size} + 1$ throws an `IndexError`.                         |
+| **Relative Distance Bias** | No explicit relative formulation                                 | The model must empirically learn that $\text{dist}(p_1, p_2) = \text{dist}(p_3, p_4) = 1$. It does not encode shift invariance $\Delta = i - j$ mathematically.  |
+| **Parameter Overhead**     | Scales linearly: $O(\text{block\_size} \times d_{\text{model}})$ | For long-context models ($L = 32\text{k}\text{--}128\text{k}$), static positional lookup tables consume excessive memory.                                        |
+| **Downstream Evolution**   | Replaced by RoPE / ALiBi in modern LLMs                          | Contemporary architectures (e.g., Llama-3, Qwen-2.5) replace learned absolute embeddings with Rotary Position Embeddings (RoPE) to enable length generalization. |

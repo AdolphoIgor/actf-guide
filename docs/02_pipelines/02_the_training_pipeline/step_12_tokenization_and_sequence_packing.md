@@ -2,7 +2,7 @@
 
 ## 1. Core Objective & Operational Placement
 
-Executing as the second stage of the **Training Pipeline**, Step 12 converts template-formatted text strings into model-ready integer tensors. 
+Executing as the second stage of the **Training Pipeline**, Step 12 converts template-formatted text strings into model-ready integer tensors.
 
 Operating in-memory within `/dev/shm`, Step 12 utilizes multi-threaded Rust tokenization backends to encode sub-word tokens via Byte-Pair Encoding (BPE), creates target-only label masks (setting prompt tokens to $-100$), packs variable-length conversations into fixed-length context windows ($B \times L$), and feeds tensors directly to PyTorch DataLoaders.
 
@@ -25,8 +25,8 @@ Simultaneously, Supervised Fine-Tuning (SFT) requires that loss is calculated **
 
 ### 1. Byte-Pair Encoding & Sequence Packing
 
-* Encodes strings into 1D integer arrays: $T = [t_1, t_2, \dots, t_N]$.
-* Concatenates sequence blocks separated by `<|im_end|>` tokens into 2D matrices of shape $B \times L$.
+- Encodes strings into 1D integer arrays: $T = [t_1, t_2, \dots, t_N]$.
+- Concatenates sequence blocks separated by `<|im_end|>` tokens into 2D matrices of shape $B \times L$.
 
 ### 2. Target-Only SFT Label Masking
 
@@ -40,5 +40,5 @@ $$\mathcal{L}_{\text{SFT}}(\theta) = -\frac{1}{|Y|} \sum_{t \in Y} \log P_\theta
 
 ### 3. Pre-Flight Verification Handshake (Gates 3 & 4)
 
-* **Gate 3 (Data Leakage & Split Gate):** Asserts zero cryptographic hash overlap between Train and Validation splits while enforcing a $95/5$ ratio.
-* **Gate 4 (Pre-Flight Tensor Gate):** Validates matrix dimensions ($B \times L$), vocabulary boundaries ($0 \le \text{Token ID} < V$), and binary attention masks ($\{0, 1\}$) before passing batches to the model forward pass.
+- **Gate 3 (Data Leakage & Split Gate):** Asserts zero cryptographic hash overlap between Train and Validation splits while enforcing a $95/5$ ratio.
+- **Gate 4 (Pre-Flight Tensor Gate):** Validates matrix dimensions ($B \times L$), vocabulary boundaries ($0 \le \text{Token ID} < V$), and binary attention masks ($\{0, 1\}$) before passing batches to the model forward pass.

@@ -99,8 +99,8 @@ Loss Scaling Solution (torch.cuda.amp.GradScaler):
 
 Because **BFloat16 (BF16)** shares the exact 8-bit exponent of FP32, its dynamic range spans $10^{-38} \text{ to } 10^{38}$. Gradient values cannot underflow or overflow the exponent window. Therefore:
 
-* **BF16 training does NOT require a `GradScaler`.**
-* Loss scaling logic is bypassed entirely, reducing host-device synchronization overhead.
+- **BF16 training does NOT require a `GradScaler`.**
+- Loss scaling logic is bypassed entirely, reducing host-device synchronization overhead.
 
 ---
 
@@ -110,8 +110,8 @@ In multi-GPU environments using Distributed Data Parallel (`torch.nn.parallel.Di
 
 If gradient accumulation steps $K = 8$ are executed naively in DDP:
 
-* The GPUs execute $8$ consecutive network `AllReduce` communication barriers per optimizer step.
-* $7$ out of the $8$ communication calls are redundant because parameters only update after step $K$.
+- The GPUs execute $8$ consecutive network `AllReduce` communication barriers per optimizer step.
+- $7$ out of the $8$ communication calls are redundant because parameters only update after step $K$.
 
 ```text
 Naive DDP + Gradient Accumulation (Massive Network Latency):
@@ -177,7 +177,7 @@ class ProductionTrainingEngine:
         """
         self.model.train()
         self.optimizer.zero_grad(set_to_none=True)
-        
+
         total_window_loss = 0.0
         num_micro_batches = len(micro_batches)
         assert num_micro_batches == self.grad_accum_steps, "Micro-batch count mismatch"
@@ -188,7 +188,7 @@ class ProductionTrainingEngine:
 
             # Determine whether to synchronize gradients in DDP
             is_final_micro_step = (step_idx == self.grad_accum_steps - 1)
-            
+
             # Use no_sync() for intermediate steps if running in DDP
             if is_ddp and not is_final_micro_step:
                 sync_context = self.model.no_sync()
@@ -199,7 +199,7 @@ class ProductionTrainingEngine:
                 # 1. Forward pass under Mixed Precision Autocast
                 with torch.autocast(device_type=self.device, dtype=self.precision_dtype):
                     logits, loss = self.model(x_micro, y_micro)
-                    
+
                     # 2. Normalize loss by accumulation factor
                     scaled_loss = loss / self.grad_accum_steps
 
@@ -264,9 +264,9 @@ Update Stage      clip_grad_norm_()              FP32 Global Norm       Rescales
 
 ## 7. Comparative Performance & Memory Matrix
 
-| Execution Strategy | Physical VRAM Usage | Tensor Core FLOPs | Distributed Sync Overhead | Dynamic Loss Scaling Required? |
-| --- | --- | --- | --- | --- |
-| **FP32 Full Batch** | $100\%$ (High risk of OOM) | $1.0\times$ (Baseline) | $1\times$ per step | No |
-| **FP32 + Grad Accum ($K=8$)** | $\approx 20\%\text{--}30\%$ of Full Batch | $1.0\times$ (Baseline) | $1\times$ (with `no_sync`) | No |
-| **FP16 + AMP + Grad Accum** | $\approx 10\%\text{--}15\%$ of Full Batch | **$2.0\times\text{--}2.8\times$ Faster** | $1\times$ (with `no_sync`) | **Yes (`GradScaler` mandatory)** |
-| **BF16 + AMP + Grad Accum** | $\approx 10\%\text{--}15\%$ of Full Batch | **$2.0\times\text{--}2.8\times$ Faster** | $1\times$ (with `no_sync`) | **No (Zero scaler overhead)** |
+| Execution Strategy            | Physical VRAM Usage                       | Tensor Core FLOPs                        | Distributed Sync Overhead  | Dynamic Loss Scaling Required?   |
+| ----------------------------- | ----------------------------------------- | ---------------------------------------- | -------------------------- | -------------------------------- |
+| **FP32 Full Batch**           | $100\%$ (High risk of OOM)                | $1.0\times$ (Baseline)                   | $1\times$ per step         | No                               |
+| **FP32 + Grad Accum ($K=8$)** | $\approx 20\%\text{--}30\%$ of Full Batch | $1.0\times$ (Baseline)                   | $1\times$ (with `no_sync`) | No                               |
+| **FP16 + AMP + Grad Accum**   | $\approx 10\%\text{--}15\%$ of Full Batch | **$2.0\times\text{--}2.8\times$ Faster** | $1\times$ (with `no_sync`) | **Yes (`GradScaler` mandatory)** |
+| **BF16 + AMP + Grad Accum**   | $\approx 10\%\text{--}15\%$ of Full Batch | **$2.0\times\text{--}2.8\times$ Faster** | $1\times$ (with `no_sync`) | **No (Zero scaler overhead)**    |

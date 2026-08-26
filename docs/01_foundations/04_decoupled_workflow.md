@@ -30,18 +30,18 @@ The Data Pipeline operates upstream, processing raw ingestion data into universa
 
 ### A. The Scheduled Batch Pattern (Time-Based)
 
-* **Execution Mechanics:** An orchestrator triggers a scheduled cron job (e.g., weekly at `00:00 UTC`). Distributed CPU workers extract incremental raw data logs, execute data normalization, deduplication, heuristic filtering, quality scoring, sensitive information masking, and benchmark decontamination, committing the clean data to the Silver storage layer.
-* **Downstream Training Trigger:** Does **not** automatically trigger GPU training. Generating a fresh Silver data partition simply updates storage cold tiers, awaiting a dedicated volumetric or performance threshold before provisioning compute.
+- **Execution Mechanics:** An orchestrator triggers a scheduled cron job (e.g., weekly at `00:00 UTC`). Distributed CPU workers extract incremental raw data logs, execute data normalization, deduplication, heuristic filtering, quality scoring, sensitive information masking, and benchmark decontamination, committing the clean data to the Silver storage layer.
+- **Downstream Training Trigger:** Does **not** automatically trigger GPU training. Generating a fresh Silver data partition simply updates storage cold tiers, awaiting a dedicated volumetric or performance threshold before provisioning compute.
 
 ### B. The Event-Driven Volumetric Pattern (Data-Size Based)
 
-* **Execution Mechanics:** Used when data arrival is non-deterministic. A Change Data Capture (CDC) stream or database listener maintains a watermark counter tracking unprocessed records ($N_{\text{unprocessed}}$).
-* **Assertion Condition:** When $N_{\text{unprocessed}} \ge N_{\text{threshold}}$, a trigger event fires the data curation pipeline. The batch is processed into the Silver layer, and the ingestion watermark is committed.
+- **Execution Mechanics:** Used when data arrival is non-deterministic. A Change Data Capture (CDC) stream or database listener maintains a watermark counter tracking unprocessed records ($N_{\text{unprocessed}}$).
+- **Assertion Condition:** When $N_{\text{unprocessed}} \ge N_{\text{threshold}}$, a trigger event fires the data curation pipeline. The batch is processed into the Silver layer, and the ingestion watermark is committed.
 
 ### C. The On-Demand Observability Pattern (Drift-Based)
 
-* **Execution Mechanics:** Live production telemetry monitors real-world model outputs via observability platforms.
-* **Assertion Condition:** When statistical data drift exceeds baseline tolerances ($\text{PSI} > \tau_{\text{drift}}$) or live task accuracy regresses ($\text{Accuracy}_{\text{live}} < 0.85$), an automated webhook fires. The orchestrator intercepts the alert, extracts the underperforming production slices, formats a targeted correction partition, and triggers the continuous training loop.
+- **Execution Mechanics:** Live production telemetry monitors real-world model outputs via observability platforms.
+- **Assertion Condition:** When statistical data drift exceeds baseline tolerances ($\text{PSI} > \tau_{\text{drift}}$) or live task accuracy regresses ($\text{Accuracy}_{\text{live}} < 0.85$), an automated webhook fires. The orchestrator intercepts the alert, extracts the underperforming production slices, formats a targeted correction partition, and triggers the continuous training loop.
 
 ---
 
@@ -72,8 +72,8 @@ To ensure that data curation remains $100\%$ model-agnostic and reusable across 
 
 ```
 
-* **Data Pipeline Scope (Raw Ingestion to Silver Layer):** Focuses exclusively on universal text hygiene, quality scoring, and safety compliance. It has zero knowledge of tokenizers, vocabularies, or context window lengths.
-* **Training Pipeline Scope (Silver Layer to Parameter Optimization):** Performs **Just-In-Time (JIT) Compilation** in shared virtual memory at worker boot time. It loads the specific model's chat template, applies Byte-Pair Encoding tokenization, masks prompt tokens to $-100$ in the cross-entropy loss tensor, and feeds packed $B \times L$ sequence matrices directly to the model parameters.
+- **Data Pipeline Scope (Raw Ingestion to Silver Layer):** Focuses exclusively on universal text hygiene, quality scoring, and safety compliance. It has zero knowledge of tokenizers, vocabularies, or context window lengths.
+- **Training Pipeline Scope (Silver Layer to Parameter Optimization):** Performs **Just-In-Time (JIT) Compilation** in shared virtual memory at worker boot time. It loads the specific model's chat template, applies Byte-Pair Encoding tokenization, masks prompt tokens to $-100$ in the cross-entropy loss tensor, and feeds packed $B \times L$ sequence matrices directly to the model parameters.
 
 ---
 
@@ -135,25 +135,23 @@ To prevent broken or regressing models from contaminating production, candidate 
 
 ```
 
-* **Staging Artifact Storage:** The training job exports raw checkpoints to an isolated, ephemeral staging path and logs step-level loss curves to experiment tracking platforms.
-* **Gatekeeper Verification & Evaluation Benchmarks:** The evaluation pipeline loads the candidate weights, runs deterministic syntax/code checks, benchmarks against domain-specific gold-standard test suites, and calculates evaluation deltas against the active production baseline:
+- **Staging Artifact Storage:** The training job exports raw checkpoints to an isolated, ephemeral staging path and logs step-level loss curves to experiment tracking platforms.
+- **Gatekeeper Verification & Evaluation Benchmarks:** The evaluation pipeline loads the candidate weights, runs deterministic syntax/code checks, benchmarks against domain-specific gold-standard test suites, and calculates evaluation deltas against the active production baseline:
 
 $$\Delta_{\text{metric}} = \text{Score}_{\text{candidate}} - \text{Score}_{\text{production}}$$
 
-
-* **Registry Promotion:** If and only if $\Delta_{\text{metric}} \ge \epsilon$, the Gatekeeper commits the model to the **Model Registry** and assigns the promotion tag:
+- **Registry Promotion:** If and only if $\Delta_{\text{metric}} \ge \epsilon$, the Gatekeeper commits the model to the **Model Registry** and assigns the promotion tag:
 
 $$\texttt{status} = \texttt{"Approved-For-Staging"}$$
 
-
-* **Circuit Breaker Action:** If the candidate regresses on any core benchmark, the pipeline halts immediately, drops the staging checkpoint, and dispatches a diagnostic traceback alert to the engineering team.
+- **Circuit Breaker Action:** If the candidate regresses on any core benchmark, the pipeline halts immediately, drops the staging checkpoint, and dispatches a diagnostic traceback alert to the engineering team.
 
 ---
 
 ## 5. End-to-End Pipeline Split & Governance Matrix
 
-| Pipeline Segment | Primary Execution Engine | Input Layer | Output Layer | Governance & Safety Responsibilities |
-| --- | --- | --- | --- | --- |
-| **Data Pipeline** | Distributed CPU Pods (Ray / Spark) | Raw Bronze Files | Clean Silver Parquet Files | **Ingestion & Schema Integrity:** Enforces file validity, non-corruption, data sanitization, and structured schema standardization. |
-| **Training Pipeline** | PyTorch / Distributed Cluster | Clean Silver Files + Config Manifest | Staging Checkpoint Artifacts | **Partition & Tensor Integrity:** Enforces strict zero-leakage dataset splits, valid matrix boundaries ($B \times L$), and loss convergence. |
-| **Gatekeeper Pipeline** | Automated Evaluation Suites / LLM Judges | Staging Candidate Checkpoint | Registered Model Asset | **Pre-Registry Benchmark Gate:** Quantifies candidate accuracy and loss deltas against production baselines before applying `Approved-For-Staging`. |
+| Pipeline Segment        | Primary Execution Engine                 | Input Layer                          | Output Layer                 | Governance & Safety Responsibilities                                                                                                                |
+| ----------------------- | ---------------------------------------- | ------------------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data Pipeline**       | Distributed CPU Pods (Ray / Spark)       | Raw Bronze Files                     | Clean Silver Parquet Files   | **Ingestion & Schema Integrity:** Enforces file validity, non-corruption, data sanitization, and structured schema standardization.                 |
+| **Training Pipeline**   | PyTorch / Distributed Cluster            | Clean Silver Files + Config Manifest | Staging Checkpoint Artifacts | **Partition & Tensor Integrity:** Enforces strict zero-leakage dataset splits, valid matrix boundaries ($B \times L$), and loss convergence.        |
+| **Gatekeeper Pipeline** | Automated Evaluation Suites / LLM Judges | Staging Candidate Checkpoint         | Registered Model Asset       | **Pre-Registry Benchmark Gate:** Quantifies candidate accuracy and loss deltas against production baselines before applying `Approved-For-Staging`. |

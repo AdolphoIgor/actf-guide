@@ -155,7 +155,7 @@ Validation Loss Convergence Trajectory:
 
 Validation Loss (nats)
   ▲
-2.10│                                           
+2.10│
     │                                          / MQA (Final Loss = 1.954)
 2.00│                                         /
     │    _ - - - - - - - - - - - - - - - - - / -  SWA + GQA-8 (Final Loss = 1.932)
@@ -166,13 +166,13 @@ Validation Loss (nats)
 
 ```
 
-| Topology | Validation Loss (nats) | Perplexity (PPL) | MMLU (5-shot) | GSM8K (8-shot CoT) | HumanEval (Pass@1) |
-| --- | --- | --- | --- | --- | --- |
-| **MHA Baseline** | **$1.912$** | **$6.767$** | **$44.8\%$** | **$28.4\%$** | **$21.3\%$** |
-| **GQA-4 ($H_{KV}=8$)** | $1.914$ | $6.780$ | $44.6\%$ | $28.2\%$ | $21.3\%$ |
-| **GQA-8 ($H_{KV}=4$)** | $1.918$ | $6.807$ | $44.5\%$ | $27.9\%$ | $20.7\%$ |
-| **MQA ($H_{KV}=1$)** | $1.954$ | $7.057$ | $42.1\%$ | $24.2\%$ | $18.2\%$ |
-| **SWA + GQA-8 ($W=1\text{k}$)** | $1.932$ | $6.903$ | $43.2\%$ | $25.8\%$ | $19.5\%$ |
+| Topology                        | Validation Loss (nats) | Perplexity (PPL) | MMLU (5-shot) | GSM8K (8-shot CoT) | HumanEval (Pass@1) |
+| ------------------------------- | ---------------------- | ---------------- | ------------- | ------------------ | ------------------ |
+| **MHA Baseline**                | **$1.912$**            | **$6.767$**      | **$44.8\%$**  | **$28.4\%$**       | **$21.3\%$**       |
+| **GQA-4 ($H_{KV}=8$)**          | $1.914$                | $6.780$          | $44.6\%$      | $28.2\%$           | $21.3\%$           |
+| **GQA-8 ($H_{KV}=4$)**          | $1.918$                | $6.807$          | $44.5\%$      | $27.9\%$           | $20.7\%$           |
+| **MQA ($H_{KV}=1$)**            | $1.954$                | $7.057$          | $42.1\%$      | $24.2\%$           | $18.2\%$           |
+| **SWA + GQA-8 ($W=1\text{k}$)** | $1.932$                | $6.903$          | $43.2\%$      | $25.8\%$           | $19.5\%$           |
 
 ---
 
@@ -197,13 +197,13 @@ Throughput (Tokens / Sec)
 
 ```
 
-| Topology | KV Cache per Token (Layer) | KV Cache Size ($B=64, L=8\text{k}$) | Max Serving Batch ($80\text{GB}$) | Decode Throughput ($B=64$) |
-| --- | --- | --- | --- | --- |
-| **MHA Baseline** | $8.19 \text{ KB}$ | **$35.2 \text{ GB}$** | $B = 18$ (OOM at $B \ge 20$) | $412 \text{ tok/s}$ ($B=16$) |
-| **GQA-4** | $2.05 \text{ KB}$ | $8.8 \text{ GB}$ | $B = 72$ | $1,840 \text{ tok/s}$ |
-| **GQA-8** | $1.02 \text{ KB}$ | **$4.4 \text{ GB}$** | **$B = 144$** | **$3,120 \text{ tok/s}$** |
-| **MQA** | **$0.26 \text{ KB}$** | **$1.1 \text{ GB}$** | **$B = 288$** | **$3,480 \text{ tok/s}$** |
-| **SWA + GQA-8** | $1.02 \text{ KB}$ | **$0.55 \text{ GB}$** ($W=1\text{k}$) | **$B = 512+$** | **$3,610 \text{ tok/s}$** |
+| Topology         | KV Cache per Token (Layer) | KV Cache Size ($B=64, L=8\text{k}$)   | Max Serving Batch ($80\text{GB}$) | Decode Throughput ($B=64$)   |
+| ---------------- | -------------------------- | ------------------------------------- | --------------------------------- | ---------------------------- |
+| **MHA Baseline** | $8.19 \text{ KB}$          | **$35.2 \text{ GB}$**                 | $B = 18$ (OOM at $B \ge 20$)      | $412 \text{ tok/s}$ ($B=16$) |
+| **GQA-4**        | $2.05 \text{ KB}$          | $8.8 \text{ GB}$                      | $B = 72$                          | $1,840 \text{ tok/s}$        |
+| **GQA-8**        | $1.02 \text{ KB}$          | **$4.4 \text{ GB}$**                  | **$B = 144$**                     | **$3,120 \text{ tok/s}$**    |
+| **MQA**          | **$0.26 \text{ KB}$**      | **$1.1 \text{ GB}$**                  | **$B = 288$**                     | **$3,480 \text{ tok/s}$**    |
+| **SWA + GQA-8**  | $1.02 \text{ KB}$          | **$0.55 \text{ GB}$** ($W=1\text{k}$) | **$B = 512+$**                    | **$3,610 \text{ tok/s}$**    |
 
 ---
 
@@ -224,8 +224,8 @@ Retrieval Accuracy (%)
 
 ```
 
-* **MQA Associative Collision:** Forcing all 32 query heads to share a single key head causes capacity saturation when disambiguating multiple semantic keys across long contexts.
-* **GQA Head Isolation:** Retaining $G = 4$ independent key heads provides sufficient orthogonal subspace capacity to achieve near-lossless retrieval parity ($98.4\%$) with dense MHA.
+- **MQA Associative Collision:** Forcing all 32 query heads to share a single key head causes capacity saturation when disambiguating multiple semantic keys across long contexts.
+- **GQA Head Isolation:** Retaining $G = 4$ independent key heads provides sufficient orthogonal subspace capacity to achieve near-lossless retrieval parity ($98.4\%$) with dense MHA.
 
 ---
 
@@ -353,12 +353,12 @@ class UnifiedAttentionBlock(nn.Module):
 
         # 4. Attention Computation & Masking
         total_kv_len = k.size(2)
-        
+
         if T > 1:
             # Prefill Phase: Construct causal lower-triangular mask
             mask = torch.full((T, total_kv_len), float("-inf"), device=x.device)
             mask = torch.triu(mask, diagonal=total_kv_len - T + 1)
-            
+
             # Apply Sliding Window Attention (SWA) mask
             if self.sliding_window is not None:
                 row_idx = torch.arange(T, device=x.device).unsqueeze(1)
@@ -420,5 +420,5 @@ class UnifiedAttentionBlock(nn.Module):
 
 ```
 
-* **Primary Architectural Standard:** Standardize on **Grouped-Query Attention (GQA)** with $H_Q = 32$ and $H_{KV} = 8$ ($4:1$ ratio) for models $\Phi \le 3\text{B}$, and $H_Q = 64, H_{KV} = 8$ ($8:1$ ratio) for models $\Phi \ge 7\text{B}$.
-* **Long-Context Hybrid Regimes:** When scaling to $128\text{k}+$ token contexts, adopt an **Interleaved SWA/GQA architecture** (alternating 3 local sliding window layers with 1 global full-attention layer) to bound memory while maintaining cross-document associative retrieval.
+- **Primary Architectural Standard:** Standardize on **Grouped-Query Attention (GQA)** with $H_Q = 32$ and $H_{KV} = 8$ ($4:1$ ratio) for models $\Phi \le 3\text{B}$, and $H_Q = 64, H_{KV} = 8$ ($8:1$ ratio) for models $\Phi \ge 7\text{B}$.
+- **Long-Context Hybrid Regimes:** When scaling to $128\text{k}+$ token contexts, adopt an **Interleaved SWA/GQA architecture** (alternating 3 local sliding window layers with 1 global full-attention layer) to bound memory while maintaining cross-document associative retrieval.

@@ -21,13 +21,10 @@ Transformer Analogy:
 
 In the Transformer architecture, **every token simultaneously acts as a Query, a Key, and a Value**:
 
-* **Query ($Q$):** What the token is looking for (*"I am a pronoun; where is my antecedent noun?"*).
+- **Query ($Q$):** What the token is looking for (_"I am a pronoun; where is my antecedent noun?"_).
 
-
-* **Key ($K$):** What the token offers to other tokens (*"I am a singular masculine proper noun"*).
-* **Value ($V$):** The substantive semantic and contextual payload that will be extracted and routed if a match occurs (*"Semantic payload: 'Romeo'"*).
-
-
+- **Key ($K$):** What the token offers to other tokens (_"I am a singular masculine proper noun"_).
+- **Value ($V$):** The substantive semantic and contextual payload that will be extracted and routed if a match occurs (_"Semantic payload: 'Romeo'"_).
 
 Unlike traditional databases that return binary (hit/miss) results, the Transformer executes a **soft, continuous retrieval**: every token queries all other accessible tokens, calculates continuous affinity scores, and computes a weighted average of all values.
 
@@ -138,14 +135,14 @@ The resulting vector $\text{Out}_i \in \mathbb{R}^{d_v}$ is a contextually enric
 
 Tracking tensor dimensions across batch size ($B$), sequence length ($T$), model dimension ($C = d_{\text{model}}$), and head dimension ($d_k$):
 
-| Stage | Operation / Expression | Input Shape | Output Shape | Description |
-| --- | --- | --- | --- | --- |
-| **1. Input** | Raw activations $x$ | — | $(B, T, C)$ | Context vectors entering attention head.|
-| **2. Projections** | $Q = x W_Q, K = x W_K, V = x W_V$ | $(B, T, C)$ | $(B, T, d_k)$ | Projections into query, key, value spaces. |
-| **3. Dot Product** | $Q @ K^T$ | $(B, T, d_k) \times (B, d_k, T)$ | $(B, T, T)$ | Pairwise affinity score matrix. |
-| **4. Scale & Mask** | $(Q K^T / \sqrt{d_k}) + M$ | $(B, T, T)$ | $(B, T, T)$ | Variance normalization and future masking. |
-| **5. Softmax** | $\text{Softmax}(\cdot, \text{dim}=-1)$ | $(B, T, T)$ | $(B, T, T)$ | Normalized attention probability weights. |
-| **6. Aggregation** | $A @ V$ | $(B, T, T) \times (B, T, d_k)$ | $(B, T, d_k)$ | Contextually aggregated output vectors. |
+| Stage               | Operation / Expression                 | Input Shape                      | Output Shape  | Description                                |
+| ------------------- | -------------------------------------- | -------------------------------- | ------------- | ------------------------------------------ |
+| **1. Input**        | Raw activations $x$                    | —                                | $(B, T, C)$   | Context vectors entering attention head.   |
+| **2. Projections**  | $Q = x W_Q, K = x W_K, V = x W_V$      | $(B, T, C)$                      | $(B, T, d_k)$ | Projections into query, key, value spaces. |
+| **3. Dot Product**  | $Q @ K^T$                              | $(B, T, d_k) \times (B, d_k, T)$ | $(B, T, T)$   | Pairwise affinity score matrix.            |
+| **4. Scale & Mask** | $(Q K^T / \sqrt{d_k}) + M$             | $(B, T, T)$                      | $(B, T, T)$   | Variance normalization and future masking. |
+| **5. Softmax**      | $\text{Softmax}(\cdot, \text{dim}=-1)$ | $(B, T, T)$                      | $(B, T, T)$   | Normalized attention probability weights.  |
+| **6. Aggregation**  | $A @ V$                                | $(B, T, T) \times (B, T, d_k)$   | $(B, T, d_k)$ | Contextually aggregated output vectors.    |
 
 ---
 
@@ -169,33 +166,33 @@ class CausalSelfAttentionHead(nn.Module):
         self.query = nn.Linear(n_embd, head_size, bias=False)
         self.key = nn.Linear(n_embd, head_size, bias=False)
         self.value = nn.Linear(n_embd, head_size, bias=False)
-        
+
         # Lower-triangular causal mask buffer (registered into state_dict)
         self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
-        
+
         # Stochastic regularization
         self.dropout = nn.Dropout(dropout)
-        
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # B = Batch size, T = Sequence length, C = Embedding dimension (n_embd)
         B, T, C = x.shape
-        
+
         # 1. Project inputs to Query, Key, Value spaces
         q = self.query(x) # (B, T, head_size)
         k = self.key(x)   # (B, T, head_size)
         v = self.value(x) # (B, T, head_size)
-        
+
         # 2. Compute affinity scores: (B, T, head_size) @ (B, head_size, T) -> (B, T, T)
         # Scaled by 1 / sqrt(head_size)
         wei = (q @ k.transpose(-2, -1)) * (k.shape[-1] ** -0.5)
-        
+
         # 3. Apply causal mask: fill future positions (where tril == 0) with -inf
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
-        
+
         # 4. Normalize scores into a probability distribution
         wei = F.softmax(wei, dim=-1) # (B, T, T)
         wei = self.dropout(wei)
-        
+
         # 5. Aggregate values: (B, T, T) @ (B, T, head_size) -> (B, T, head_size)
         out = wei @ v
         return out
@@ -208,10 +205,10 @@ class CausalSelfAttentionHead(nn.Module):
 
 While self-attention queries its own input sequence, the QKV formulation naturally extends to multi-modal and encoder-decoder architectures (e.g., MiniT5) through **Cross-Attention**:
 
-| Feature | Self-Attention (Decoder / Encoder) | Cross-Attention (Seq2Seq Decoder) |
-| --- | --- | --- |
-| **Query Source ($Q$)** | Derived from current sequence $X$<br> | Derived from current decoder sequence $X_{\text{dec}}$<br> |
-| **Key Source ($K$)** | Derived from current sequence $X$<br> | Derived from upstream encoder output $X_{\text{enc}}$<br> |
-| **Value Source ($V$)** | Derived from current sequence $X$<br> | Derived from upstream encoder output $X_{\text{enc}}$<br> |
-| **Causal Masking** | Active in decoders; inactive in encoders | Inactive (decoder attends to all encoder tokens) |
-| **Operational Role** | Contextual intra-sequence token routing | Inter-sequence conditioning and translation bridge |
+| Feature                | Self-Attention (Decoder / Encoder)       | Cross-Attention (Seq2Seq Decoder)                          |
+| ---------------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| **Query Source ($Q$)** | Derived from current sequence $X$<br>    | Derived from current decoder sequence $X_{\text{dec}}$<br> |
+| **Key Source ($K$)**   | Derived from current sequence $X$<br>    | Derived from upstream encoder output $X_{\text{enc}}$<br>  |
+| **Value Source ($V$)** | Derived from current sequence $X$<br>    | Derived from upstream encoder output $X_{\text{enc}}$<br>  |
+| **Causal Masking**     | Active in decoders; inactive in encoders | Inactive (decoder attends to all encoder tokens)           |
+| **Operational Role**   | Contextual intra-sequence token routing  | Inter-sequence conditioning and translation bridge         |

@@ -68,22 +68,18 @@ Step 6a processes records routed to **Track A** through a four-stage near-dedupl
 
 $$V(D) = \left[ \min_{s \in S(D)} h_1(s), \; \min_{s \in S(D)} h_2(s), \; \dots, \; \min_{s \in S(D)} h_m(s) \right]$$
 
-
-3. **Jaccard Equivalence Property:** The probability that two documents produce an identical minimum hash value for permutation $h_i$ equals their true set Jaccard similarity:
+1. **Jaccard Equivalence Property:** The probability that two documents produce an identical minimum hash value for permutation $h_i$ equals their true set Jaccard similarity:
 
 $$P\left( \min_{s \in S(D_1)} h_i(s) = \min_{s \in S(D_2)} h_i(s) \right) = \text{Jaccard}(D_1, D_2) = \frac{\vert{}S(D_1) \cap S(D_2)\vert{}}{\vert{}S(D_1) \cup S(D_2)\vert{}}$$
 
-
 $$\text{Target Deduplication Threshold}: \text{Jaccard Similarity} \ge 0.85$$
-
-
 
 ### Stage 2: LSH Banding & Candidate Bucket Collision
 
 To locate candidate duplicate pairs without pairwise evaluation, the signature vector $V(D)$ of length $m$ is divided into $b$ bands, each containing $r$ rows ($m = b \times r$).
 
-* For each band, the $r$ integer values are hashed together into a single band key.
-* If two distinct documents share an identical band key in at least **one** of the $b$ bands, they collide in the same hash bucket and are flagged as a candidate near-duplicate pair.
+- For each band, the $r$ integer values are hashed together into a single band key.
+- If two distinct documents share an identical band key in at least **one** of the $b$ bands, they collide in the same hash bucket and are flagged as a candidate near-duplicate pair.
 
 The probability of two documents colliding in an LSH bucket follows a characteristic S-curve:
 
@@ -110,17 +106,17 @@ To prevent incoming streaming records from duplicating text processed in previou
 
 ## 4. Near-Deduplication Strategy Matrix
 
-| Deduplication Dimension | Algorithmic Mechanism | Target Similarity Domain | Storage & Index Architecture | Operational Action |
-| --- | --- | --- | --- | --- |
-| **Syntactic Near-Deduplication** | MinHash ($m=128$) + LSH Banding ($b=16, r=8$) | Lexical & structural text overlap ($\text{Jaccard} \ge 0.85$). | Embedded Key-Value Band Index (LSM-Tree mapped in virtual memory) | **Cluster & Purge:** Retain single longest canonical document per cluster. |
-| **Semantic Near-Deduplication** | Dense Vector Embeddings + Approximate Nearest Neighbor (ANN) | Conceptual & semantic equivalence (different wording, same meaning). | Embedded C++ Vector Engine (In-Process HNSW / IVF-PQ index mapped to NVMe) | **Purge:** Drop semantic duplicates exceeding cosine similarity threshold. |
-| **Historical State Cross-Referencing** | Incremental Band Key Lookup (Daily Delta) | Cross-run duplicate prevention against historical training state. | Persistent Signature Manifest Index | **Filter:** Evict incoming records matching historical band keys. |
+| Deduplication Dimension                | Algorithmic Mechanism                                        | Target Similarity Domain                                             | Storage & Index Architecture                                               | Operational Action                                                         |
+| -------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Syntactic Near-Deduplication**       | MinHash ($m=128$) + LSH Banding ($b=16, r=8$)                | Lexical & structural text overlap ($\text{Jaccard} \ge 0.85$).       | Embedded Key-Value Band Index (LSM-Tree mapped in virtual memory)          | **Cluster & Purge:** Retain single longest canonical document per cluster. |
+| **Semantic Near-Deduplication**        | Dense Vector Embeddings + Approximate Nearest Neighbor (ANN) | Conceptual & semantic equivalence (different wording, same meaning). | Embedded C++ Vector Engine (In-Process HNSW / IVF-PQ index mapped to NVMe) | **Purge:** Drop semantic duplicates exceeding cosine similarity threshold. |
+| **Historical State Cross-Referencing** | Incremental Band Key Lookup (Daily Delta)                    | Cross-run duplicate prevention against historical training state.    | Persistent Signature Manifest Index                                        | **Filter:** Evict incoming records matching historical band keys.          |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **MinHash & LSH Signature Engines:** High-performance vectorization utilities configured to generate permutation hash vectors and partition signatures into LSH bands.
-* **Distributed Graph Resolvers:** Graph algorithms (Union-Find and Connected Components) capable of resolving large-scale adjacency lists into isolated document clusters.
-* **Embedded Key-Value Signature Indices:** Low-latency, LSM-Tree-backed Key-Value engines mapped directly to virtual memory for zero-overhead band key lookups.
-* **Embedded Dense Vector Search Engines:** In-process C++ vector indexing libraries utilizing Hierarchical Navigable Small World (HNSW) graphs or Inverted File Product Quantization (IVF-PQ) for direct memory-mapped semantic similarity queries.
+- **MinHash & LSH Signature Engines:** High-performance vectorization utilities configured to generate permutation hash vectors and partition signatures into LSH bands.
+- **Distributed Graph Resolvers:** Graph algorithms (Union-Find and Connected Components) capable of resolving large-scale adjacency lists into isolated document clusters.
+- **Embedded Key-Value Signature Indices:** Low-latency, LSM-Tree-backed Key-Value engines mapped directly to virtual memory for zero-overhead band key lookups.
+- **Embedded Dense Vector Search Engines:** In-process C++ vector indexing libraries utilizing Hierarchical Navigable Small World (HNSW) graphs or Inverted File Product Quantization (IVF-PQ) for direct memory-mapped semantic similarity queries.

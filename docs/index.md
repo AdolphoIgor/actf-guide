@@ -6,11 +6,11 @@ This repository contains the technical documentation, architectural specificatio
 
 The platform is designed around five core principles:
 
-* **Zero-Framework PyTorch Modularity:** Pure, transparent tensor math without heavy wrapper abstractions.
-* **Deterministic Lineage & Provenance:** Cryptographically signed manifests tracking every dataset shard, Git commit SHA, and hyperparameter configuration.
-* **Hardware-Optimal Execution:** Native BFloat16/FP8 Tensor Core acceleration, FlashAttention/SDPA integration, and memory-bandwidth-optimized inference.
-* **Mathematical Release Gatekeepers:** Zero-tolerance hard invariants paired with statistical hypothesis testing (McNemar tests, Bootstrap confidence intervals, and symmetric LLM tournaments).
-* **Continuous Training & Governance:** Non-blocking telemetry streaming, automated loss-spike circuit breakers, and atomic registry promotion.
+- **Zero-Framework PyTorch Modularity:** Pure, transparent tensor math without heavy wrapper abstractions.
+- **Deterministic Lineage & Provenance:** Cryptographically signed manifests tracking every dataset shard, Git commit SHA, and hyperparameter configuration.
+- **Hardware-Optimal Execution:** Native BFloat16/FP8 Tensor Core acceleration, FlashAttention/SDPA integration, and memory-bandwidth-optimized inference.
+- **Mathematical Release Gatekeepers:** Zero-tolerance hard invariants paired with statistical hypothesis testing (McNemar tests, Bootstrap confidence intervals, and symmetric LLM tournaments).
+- **Continuous Training & Governance:** Non-blocking telemetry streaming, automated loss-spike circuit breakers, and atomic registry promotion.
 
 ```text
 The Unified LLM Engineering Architecture:
@@ -98,39 +98,39 @@ docs/
 
 ### [Module 01: Tokenization and Vocabulary Contracts](https://www.google.com/search?q=01_foundations/01_tokenization/index.md)
 
-* Byte-Pair Encoding (BPE) tokenization algorithms and vocabulary construction.
-* Explicit dialogue turn delimiters (`<|im_start|>`, `<|im_end|>`) and chat templates.
-* Unicode byte-level fallback mechanics and regex splitting rules.
+- Byte-Pair Encoding (BPE) tokenization algorithms and vocabulary construction.
+- Explicit dialogue turn delimiters (`<|im_start|>`, `<|im_end|>`) and chat templates.
+- Unicode byte-level fallback mechanics and regex splitting rules.
 
 ### [Module 02: Positional Encodings and Context Extrapolation](https://www.google.com/search?q=01_foundations/02_embeddings_and_positions/index.md)
 
-* Multiplicative complex rotation via Rotary Position Embeddings (RoPE).
-* Monotonic linear attention bias via ALiBi for zero-shot context extrapolation.
-* Context extension mechanics: Linear Interpolation, NTK-Aware Scaling, and YaRN.
+- Multiplicative complex rotation via Rotary Position Embeddings (RoPE).
+- Monotonic linear attention bias via ALiBi for zero-shot context extrapolation.
+- Context extension mechanics: Linear Interpolation, NTK-Aware Scaling, and YaRN.
 
 ### [Module 03: Attention Mechanisms and KV-Cache Scaling](https://www.google.com/search?q=01_foundations/03_attention_mechanisms/index.md)
 
-* Memory-bandwidth bottlenecks and the transition from Multi-Head (MHA) to Grouped-Query Attention (GQA).
-* 87.5% KV-cache compression via 8:1 query-to-KV head grouping.
-* Sliding Window Attention (SWA) and chunked prefill dynamics.
+- Memory-bandwidth bottlenecks and the transition from Multi-Head (MHA) to Grouped-Query Attention (GQA).
+- 87.5% KV-cache compression via 8:1 query-to-KV head grouping.
+- Sliding Window Attention (SWA) and chunked prefill dynamics.
 
 ### [Module 04: Normalization Topologies and Gated Activations](https://www.google.com/search?q=01_foundations/04_normalization_and_activations/index.md)
 
-* Pre-LN vs. Post-LN gradient stability across deep networks.
-* RMSNorm variance-only normalization eliminating mean calculation overhead.
-* SwiGLU gated feed-forward networks with $\frac{8}{3} d_{\text{model}}$ parameter-parity scaling.
+- Pre-LN vs. Post-LN gradient stability across deep networks.
+- RMSNorm variance-only normalization eliminating mean calculation overhead.
+- SwiGLU gated feed-forward networks with $\frac{8}{3} d_{\text{model}}$ parameter-parity scaling.
 
 ### [Module 05: Evaluation Methodologies and Verification](https://www.google.com/search?q=01_foundations/07_evaluating/index.md)
 
-* Information-theoretic metrics: Cross-Entropy Loss, Perplexity (PPL), and Bits-per-Byte (BPB).
-* Downstream benchmark paradigms: Multiple-choice log-likelihood vs. generative execution.
-* LLM-as-a-Judge symmetric order pairing, Cohen's Kappa calibration, and Bradley-Terry Elo ratings.
+- Information-theoretic metrics: Cross-Entropy Loss, Perplexity (PPL), and Bits-per-Byte (BPB).
+- Downstream benchmark paradigms: Multiple-choice log-likelihood vs. generative execution.
+- LLM-as-a-Judge symmetric order pairing, Cohen's Kappa calibration, and Bradley-Terry Elo ratings.
 
 ### [Module 06: High-Throughput Inference and Serving Systems](https://www.google.com/search?q=01_foundations/08_inference/index.md)
 
-* PagedAttention virtual memory block allocation in vLLM to eliminate memory fragmentation.
-* Speculative Decoding verification mechanics: Draft-Target sampling and rejection algorithms.
-* Weight-only and activation quantization: AWQ, GPTQ, and native FP8 Tensor Core execution.
+- PagedAttention virtual memory block allocation in vLLM to eliminate memory fragmentation.
+- Speculative Decoding verification mechanics: Draft-Target sampling and rejection algorithms.
+- Weight-only and activation quantization: AWQ, GPTQ, and native FP8 Tensor Core execution.
 
 ---
 

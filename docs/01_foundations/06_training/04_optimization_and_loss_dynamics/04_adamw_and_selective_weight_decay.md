@@ -54,13 +54,11 @@ At each optimization step t:
 
 $$m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t$$
 
-
 Tracks the directional velocity of the descent trajectory. Standard configuration is $\beta_1 = 0.9$.
 
 ### 2. Second Moment ($v_t$) — Adaptive Variance
 
 $$v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$$
-
 
 Tracks the uncentered variance (energy) of each parameter coordinate. Standard configurations are $\beta_2 = 0.999$ (for small models/pre-training baselines) or $\beta_2 = 0.95$ (standard in modern LLM training like LLaMA to shorten memory retention of gradient spikes).
 
@@ -201,19 +199,19 @@ def configure_optimizers(
 
 ## 6. Hyperparameter Calibration & Numerical Stability
 
-| Hyperparameter | Standard Default | Extended Context / LLM Scale | Impact of Misconfiguration |
-| --- | --- | --- | --- |
-| **Learning Rate ($\eta$)** | $3 \times 10^{-4}$ | $1 \times 10^{-4} \text{ to } 6 \times 10^{-4}$ | Too high: Loss divergence (`NaN`). Too low: Stalled convergence. |
-| **Momentum ($\beta_1$)** | $0.90$ | $0.90$ | Too high: Overshoots sharp loss valleys. Too low: Slow traversal of flat plateaus. |
-| **Variance ($\beta_2$)** | $0.999$ | **$0.95 \text{ to } 0.98$** | $0.999$ retains gradient spikes too long; $0.95$ recovers rapidly from outlier batches. |
-| **Denominator Epsilon ($\epsilon$)** | $10^{-8}$ | **$10^{-6} \text{ to } 10^{-5}$** | In mixed precision (FP16/BF16), $\epsilon = 10^{-8}$ can underflow, causing division by zero. |
-| **Weight Decay ($\lambda$)** | $0.01$ | **$0.10$** | Too high: Underfitting / excessive parameter shrinkage. Too low: Overfitting on small data. |
+| Hyperparameter                       | Standard Default   | Extended Context / LLM Scale                    | Impact of Misconfiguration                                                                    |
+| ------------------------------------ | ------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Learning Rate ($\eta$)**           | $3 \times 10^{-4}$ | $1 \times 10^{-4} \text{ to } 6 \times 10^{-4}$ | Too high: Loss divergence (`NaN`). Too low: Stalled convergence.                              |
+| **Momentum ($\beta_1$)**             | $0.90$             | $0.90$                                          | Too high: Overshoots sharp loss valleys. Too low: Slow traversal of flat plateaus.            |
+| **Variance ($\beta_2$)**             | $0.999$            | **$0.95 \text{ to } 0.98$**                     | $0.999$ retains gradient spikes too long; $0.95$ recovers rapidly from outlier batches.       |
+| **Denominator Epsilon ($\epsilon$)** | $10^{-8}$          | **$10^{-6} \text{ to } 10^{-5}$**               | In mixed precision (FP16/BF16), $\epsilon = 10^{-8}$ can underflow, causing division by zero. |
+| **Weight Decay ($\lambda$)**         | $0.01$             | **$0.10$**                                      | Too high: Underfitting / excessive parameter shrinkage. Too low: Overfitting on small data.   |
 
 ### Optimizer Comparison Matrix
 
-| Dimension | SGD with Momentum | Standard Adam (L2) | AdamW (Decoupled) | Lion (EvoLved Sign) |
-| --- | --- | --- | --- | --- |
-| **State Memory** | 1 buffer ($m_t$, 4B/param) | 2 buffers ($m_t, v_t$, 8B/param) | **2 buffers ($m_t, v_t$, 8B/param)** | 1 buffer ($m_t$, 4B/param) |
-| **Decoupled Decay** | N/A (Equivalent) | No (Distorted by $v_t$) | **Yes (Pure uniform decay)** | Yes (Sign-based decay) |
-| **Sensitivity to Scale** | High (Requires exact LR tuning) | Low (Self-normalizing) | **Low (Robust across layers)** | Low (Sign operation bounded) |
-| **LLM Pre-Training Standard** | Rarely used in modern LLMs | Deprecated | **Universal Industry Standard** | Experimental alternative |
+| Dimension                     | SGD with Momentum               | Standard Adam (L2)               | AdamW (Decoupled)                    | Lion (EvoLved Sign)          |
+| ----------------------------- | ------------------------------- | -------------------------------- | ------------------------------------ | ---------------------------- |
+| **State Memory**              | 1 buffer ($m_t$, 4B/param)      | 2 buffers ($m_t, v_t$, 8B/param) | **2 buffers ($m_t, v_t$, 8B/param)** | 1 buffer ($m_t$, 4B/param)   |
+| **Decoupled Decay**           | N/A (Equivalent)                | No (Distorted by $v_t$)          | **Yes (Pure uniform decay)**         | Yes (Sign-based decay)       |
+| **Sensitivity to Scale**      | High (Requires exact LR tuning) | Low (Self-normalizing)           | **Low (Robust across layers)**       | Low (Sign operation bounded) |
+| **LLM Pre-Training Standard** | Rarely used in modern LLMs      | Deprecated                       | **Universal Industry Standard**      | Experimental alternative     |

@@ -124,9 +124,9 @@ Resolution: NCCL Health Watchdog Daemon terminates cluster after timeout (e.g., 
 
 To prevent runaway compute billing on deadlocked clusters:
 
-* **`NCCL_ASYNC_ERROR_HANDLING=1` (or `TORCH_NCCL_ASYNC_ERROR_HANDLING=1`):** Instructs the PyTorch runtime to hook asynchronous CUDA errors and crash all collective ranks instead of hanging.
-* **`TORCH_DISTRIBUTED_DEBUG=INFO`:** Logs detailed communication graph topologies when collective timeouts occur.
-* **Custom Step Heartbeat Watchdog:** Tracks wall-clock time between consecutive optimizer steps. If elapsed time exceeds $3\times$ the running average step duration, the watchdog throws an exception and triggers emergency shutdown.
+- **`NCCL_ASYNC_ERROR_HANDLING=1` (or `TORCH_NCCL_ASYNC_ERROR_HANDLING=1`):** Instructs the PyTorch runtime to hook asynchronous CUDA errors and crash all collective ranks instead of hanging.
+- **`TORCH_DISTRIBUTED_DEBUG=INFO`:** Logs detailed communication graph topologies when collective timeouts occur.
+- **Custom Step Heartbeat Watchdog:** Tracks wall-clock time between consecutive optimizer steps. If elapsed time exceeds $3\times$ the running average step duration, the watchdog throws an exception and triggers emergency shutdown.
 
 ---
 
@@ -156,7 +156,7 @@ class PreemptionHandler:
     def __init__(self):
         self.received_shutdown_signal = False
         self.signal_received_timestamp: Optional[float] = None
-        
+
         # Register signal hooks
         signal.signal(signal.SIGTERM, self._handle_signal)
         signal.signal(signal.SIGINT, self._handle_signal)
@@ -198,12 +198,12 @@ class ResilientTrainingEngine:
         self.scaler = scaler
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.rank = rank
         self.world_size = world_size
         self.max_step_timeout_sec = max_step_timeout_sec
         self.preemption_handler = PreemptionHandler()
-        
+
         self.last_step_heartbeat = time.time()
 
     def save_emergency_state(
@@ -241,7 +241,7 @@ class ResilientTrainingEngine:
             with open(temp_path, "a+") as f:
                 os.fsync(f.fileno())
             os.replace(temp_path, final_path)
-            
+
             # Update latest symlink
             link_path = self.checkpoint_dir / "latest.pt"
             temp_link = self.checkpoint_dir / "latest.pt.tmp"
@@ -249,7 +249,7 @@ class ResilientTrainingEngine:
                 temp_link.unlink()
             os.symlink(final_path.name, temp_link)
             os.replace(temp_link, link_path)
-            
+
             print(f"SUCCESS: Emergency checkpoint synchronized and persisted to {final_path}")
 
         if self.world_size > 1:
@@ -281,7 +281,7 @@ class ResilientTrainingEngine:
         Main execution loop wrapped in preemption and health checks.
         """
         self.model.train()
-        
+
         for step in range(start_step, total_steps):
             # 1. Evaluate Heartbeat Watchdog
             self.check_heartbeat(step)
@@ -301,7 +301,7 @@ class ResilientTrainingEngine:
             # 3. Training Step Execution
             x, y = next(data_iterator)
             self.optimizer.zero_grad(set_to_none=True)
-            
+
             with torch.autocast(device_type="cuda" if torch.cuda.is_available() else "cpu", dtype=torch.bfloat16):
                 logits = self.model(x)
                 loss = loss_fn(logits.view(-1, logits.size(-1)), y.view(-1))

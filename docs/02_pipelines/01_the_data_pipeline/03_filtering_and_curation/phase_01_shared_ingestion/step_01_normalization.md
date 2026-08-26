@@ -16,8 +16,8 @@ Data ingested from un-sanitized enterprise repositories arrives with severe enco
 
 The same visual character can be represented by multiple distinct Unicode code point sequences:
 
-* **Canonical Composition (NFC):** A single pre-composed code point representing both character and diacritic (e.g., $\text{U+00E9}$ for `é`).
-* **Canonical Decomposition (NFD):** Two separate code points combining a base character and a combining mark (e.g., $\text{U+0065} + \text{U+0301}$ for `e` + `◌́`).
+- **Canonical Composition (NFC):** A single pre-composed code point representing both character and diacritic (e.g., $\text{U+00E9}$ for `é`).
+- **Canonical Decomposition (NFD):** Two separate code points combining a base character and a combining mark (e.g., $\text{U+0065} + \text{U+0301}$ for `e` + `◌́`).
 
 If a corpus contains a mixture of NFC and NFD encodings, Byte-Pair Encoding (BPE) and WordPiece tokenizers fail to recognize their semantic identity, assigning completely different integer Token IDs to identical words.
 
@@ -29,9 +29,9 @@ $$f_{\text{NFKC}}\left( \text{U+0065} + \text{U+0301} \right) = \text{U+00E9}$$
 
 Scanned documents, OCR outputs, and raw HTML DOM trees routinely contain non-printable control bytes, soft hyphens, and zero-width spaces:
 
-* **Control Bytes:** Non-printable ASCII signals ($\text{U+0000}$ through $\text{U+001F}$, excluding valid structural whitespace $\text{U+000A}$ `\n` and $\text{U+0009}$ `\t`).
-* **Phantom Characters:** Zero-width spaces ($\text{U+200B}$), zero-width non-joiners ($\text{U+200C}$), and soft hyphens ($\text{U+00AD}$) inserted for visual layout wrapping.
-* **Malformed Byte Arrays:** Corrupted byte sequences rendered as replacement characters ($\text{U+FFFD}$).
+- **Control Bytes:** Non-printable ASCII signals ($\text{U+0000}$ through $\text{U+001F}$, excluding valid structural whitespace $\text{U+000A}$ `\n` and $\text{U+0009}$ `\t`).
+- **Phantom Characters:** Zero-width spaces ($\text{U+200B}$), zero-width non-joiners ($\text{U+200C}$), and soft hyphens ($\text{U+00AD}$) inserted for visual layout wrapping.
+- **Malformed Byte Arrays:** Corrupted byte sequences rendered as replacement characters ($\text{U+FFFD}$).
 
 Sub-word tokenizers cannot map these non-semantic characters to real linguistic concepts. Instead, they either isolate them into byte-fallback tokens or merge them into arbitrary "phantom tokens." This consumes fixed sequence window capacity, skews attention matrix distances, and induces hallucinated token generations during model inference.
 
@@ -115,19 +115,19 @@ $$\text{Target Pattern}: \text{Prefix} + \text{"-"} + \text{"\n"} + \text{Suffix
 
 ## 4. Transformation & Sanitization Matrix
 
-| Input Defect / Layout Artifact | Unicode / Byte Representation | Transformation Rule | Output Format | Downstream LLM Impact |
-| --- | --- | --- | --- | --- |
-| **Decomposed Diacritics (NFD)** | $\text{U+0065} + \text{U+0301}$ (`e` + `◌́`) | NFKC Normalization | $\text{U+00E9}$ (`é`) | Eliminates duplicate Token IDs for identical semantic words in **Phase 3**. |
-| **Typographic Ligatures** | $\text{U+FB01}$ (`ﬁ`) | NFKC Decomposition | `f` + `i` | Standardizes vocabulary tokens across diverse publishing sources. |
-| **Soft Hyphens / Zero-Width** | $\text{U+00AD}$, $\text{U+200B}$ | String Stripping | *Removed* | Prevents allocation of empty phantom tokens in BPE matrices. |
-| **Control Bytes / Null Signals** | $\text{U+0000}$–$\text{U+001F}$ (excl. `\n`, `\t`) | Pattern Clearing | *Removed* | Prevents sequence context alignment drift during pre-training. |
-| **Broken Line Layout Hyphen** | `en-\nterprise` | Dictionary FST Lookup | `enterprise` | Restores original word tokens for accurate semantic loss calculation. |
-| **Valid Compound Line Break** | `high-\nquality` | Dictionary FST Lookup | `high-quality` | Preserves compound word semantics without accidental token merging. |
+| Input Defect / Layout Artifact   | Unicode / Byte Representation                      | Transformation Rule   | Output Format         | Downstream LLM Impact                                                       |
+| -------------------------------- | -------------------------------------------------- | --------------------- | --------------------- | --------------------------------------------------------------------------- |
+| **Decomposed Diacritics (NFD)**  | $\text{U+0065} + \text{U+0301}$ (`e` + `◌́`)        | NFKC Normalization    | $\text{U+00E9}$ (`é`) | Eliminates duplicate Token IDs for identical semantic words in **Phase 3**. |
+| **Typographic Ligatures**        | $\text{U+FB01}$ (`ﬁ`)                              | NFKC Decomposition    | `f` + `i`             | Standardizes vocabulary tokens across diverse publishing sources.           |
+| **Soft Hyphens / Zero-Width**    | $\text{U+00AD}$, $\text{U+200B}$                   | String Stripping      | _Removed_             | Prevents allocation of empty phantom tokens in BPE matrices.                |
+| **Control Bytes / Null Signals** | $\text{U+0000}$–$\text{U+001F}$ (excl. `\n`, `\t`) | Pattern Clearing      | _Removed_             | Prevents sequence context alignment drift during pre-training.              |
+| **Broken Line Layout Hyphen**    | `en-\nterprise`                                    | Dictionary FST Lookup | `enterprise`          | Restores original word tokens for accurate semantic loss calculation.       |
+| **Valid Compound Line Break**    | `high-\nquality`                                   | Dictionary FST Lookup | `high-quality`        | Preserves compound word semantics without accidental token merging.         |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Vectorized Array Kernels:** Low-level C++ compute utilities designed for zero-copy string manipulation on contiguous memory arrays.
-* **Encoding & Character Repair Engines:** Libraries implementing standard Unicode character category tables ($\p{C}$) and automated encoding detection heuristics.
-* **Lexical Reassembly Engines:** Finite State Transducers (FST) and SymSpell memory-mapped hash structures optimized for microsecond dictionary lookups.
+- **Vectorized Array Kernels:** Low-level C++ compute utilities designed for zero-copy string manipulation on contiguous memory arrays.
+- **Encoding & Character Repair Engines:** Libraries implementing standard Unicode character category tables ($\p{C}$) and automated encoding detection heuristics.
+- **Lexical Reassembly Engines:** Finite State Transducers (FST) and SymSpell memory-mapped hash structures optimized for microsecond dictionary lookups.

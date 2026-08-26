@@ -4,18 +4,13 @@
 
 A language model processes sequences as continuous streams of discrete integer token IDs. Without explicit control signals, a model cannot distinguish between:
 
-* The boundary where a user prompt ends and an assistant response begins.
+- The boundary where a user prompt ends and an assistant response begins.
 
+- The end of an independent document versus a continuation across paragraphs.
 
-* The end of an independent document versus a continuation across paragraphs.
+- Missing or corrupted inputs versus valid vocabulary.
 
-
-* Missing or corrupted inputs versus valid vocabulary.
-
-
-* Targets meant for backpropagation versus context meant strictly for conditioning.
-
-
+- Targets meant for backpropagation versus context meant strictly for conditioning.
 
 **Special tokens** (also called control tokens or structural delimiters) are non-lexical vocabulary entries reserved to structure the input sequence, orchestrate multi-turn dialogue state transitions, and enforce loss masking boundaries.
 
@@ -59,15 +54,15 @@ Special tokens vary across Transformer architectural paradigms:
 
 ### Paradigm Comparison Matrix
 
-| Special Token | Typical Representation | Primary Paradigm | Functional Purpose |
-| --- | --- | --- | --- |
-| **BOS (Beginning of Sequence)** | `<s>`, `< | begin_of_text | >` |
-| **EOS (End of Sequence)** | `</s>`, `< | end_of_text | >` |
-| **PAD (Padding)** | `<pad>`, `[PAD]` | All | Aligns variable-length sequences into uniform tensor matrices. |
-| **UNK (Unknown)** | `<unk>`, `[UNK]` | Standard BPE / WordPiece | Fallback token for unrepresented byte or character sequences. |
-| **MASK (Masking)** | `[MASK]`, `<mask>` | Masked Encoders (BERT) | Corrupts target tokens for bidirectional reconstruction. |
-| **Role Delimiters** | `< | im_start | >`, `< |
-| **SOS (Start of Sentence)** | `<SOS>`, Space (`' '`) | Encoder-Decoder (T5) | Serves as right-shifted decoder prompt for Teacher Forcing. |
+| Special Token                   | Typical Representation | Primary Paradigm         | Functional Purpose                                             |
+| ------------------------------- | ---------------------- | ------------------------ | -------------------------------------------------------------- |
+| **BOS (Beginning of Sequence)** | `<s>`, `<              | begin_of_text            | >`                                                             |
+| **EOS (End of Sequence)**       | `</s>`, `<             | end_of_text              | >`                                                             |
+| **PAD (Padding)**               | `<pad>`, `[PAD]`       | All                      | Aligns variable-length sequences into uniform tensor matrices. |
+| **UNK (Unknown)**               | `<unk>`, `[UNK]`       | Standard BPE / WordPiece | Fallback token for unrepresented byte or character sequences.  |
+| **MASK (Masking)**              | `[MASK]`, `<mask>`     | Masked Encoders (BERT)   | Corrupts target tokens for bidirectional reconstruction.       |
+| **Role Delimiters**             | `<                     | im_start                 | >`,`<                                                          |
+| **SOS (Start of Sentence)**     | `<SOS>`, Space (`' '`) | Encoder-Decoder (T5)     | Serves as right-shifted decoder prompt for Teacher Forcing.    |
 
 ---
 
@@ -77,11 +72,10 @@ In Supervised Fine-Tuning (SFT), conversations arrive as nested JSON objects:
 
 ```json
 [
-  {"role": "system", "content": "You are a specialized SQL assistant."},
-  {"role": "user", "content": "SELECT all users from table."},
-  {"role": "assistant", "content": "SELECT * FROM users;"}
+  { "role": "system", "content": "You are a specialized SQL assistant." },
+  { "role": "user", "content": "SELECT all users from table." },
+  { "role": "assistant", "content": "SELECT * FROM users;" }
 ]
-
 ```
 
 To serialize this structure into a continuous token sequence without ambiguity, production frameworks compile the conversation through a **Jinja2 Chat Template** (e.g., OpenAI ChatML or Llama-3 Header Format).
@@ -158,11 +152,11 @@ Packed Sequence (L=12): [ Doc1_T1, Doc1_T2, <eos>, Doc2_T1, Doc2_T2, Doc2_T3, <e
 
 ### Padding Strategy Trade-Offs
 
-| Strategy | Compute Efficiency | Implementation Complexity | Best Used In |
-| --- | --- | --- | --- |
-| **Static Padding** | Lowest ($\le 50\%$ useful FLOPs) | Simplest (`padding="max_length"`) | Small baseline tests |
-| **Dynamic Collation** | Moderate ($70\text{--}85\%$ useful FLOPs) | Moderate (custom `collate_fn`) | Standard PyTorch training |
-| **Sequence Packing** | Highest ($100\%$ useful FLOPs) | High (requires position reset / 2D masks) | Large-scale pre-training & SFT |
+| Strategy              | Compute Efficiency                        | Implementation Complexity                 | Best Used In                   |
+| --------------------- | ----------------------------------------- | ----------------------------------------- | ------------------------------ |
+| **Static Padding**    | Lowest ($\le 50\%$ useful FLOPs)          | Simplest (`padding="max_length"`)         | Small baseline tests           |
+| **Dynamic Collation** | Moderate ($70\text{--}85\%$ useful FLOPs) | Moderate (custom `collate_fn`)            | Standard PyTorch training      |
+| **Sequence Packing**  | Highest ($100\%$ useful FLOPs)            | High (requires position reset / 2D masks) | Large-scale pre-training & SFT |
 
 ---
 
@@ -184,7 +178,7 @@ class ChatMLDataCollator:
     def __init__(self, tokenizer: ByteLevelBPETokenizer, pad_token_id: int = 1):
         self.tokenizer = tokenizer
         self.pad_token_id = pad_token_id
-        
+
         # Resolve special token strings
         self.im_start = "<|im_start|>"
         self.im_end = "<|im_end|>"
@@ -197,7 +191,7 @@ class ChatMLDataCollator:
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
-            
+
             # Format turn
             formatted_turn = f"{self.im_start}{role}\n{content}{self.im_end}\n"
             turn_tokens = self.tokenizer.encode(formatted_turn).ids
@@ -209,7 +203,7 @@ class ChatMLDataCollator:
                 # Mask out the turn header (<|im_start|>assistant\n)
                 header_tokens = self.tokenizer.encode(f"{self.im_start}{role}\n").ids
                 header_len = len(header_tokens)
-                
+
                 turn_labels = ([-100] * header_len) + turn_tokens[header_len:]
                 labels.extend(turn_labels)
             else:
@@ -235,7 +229,7 @@ class ChatMLDataCollator:
         padded_labels = torch.nn.utils.rnn.pad_sequence(
             batch_labels, batch_first=True, padding_value=-100
         )
-        
+
         # Generate binary attention mask (1 for real tokens, 0 for pad)
         attention_mask = (padded_inputs != self.pad_token_id).long()
 

@@ -73,10 +73,9 @@ Step 10 processes re-converged data streams through a three-stage decontaminatio
 
 1. **Sliding Window Tokenization:** Every incoming training document is sliced into identical sliding $N$-gram windows (e.g., $13$-grams).
 2. **$O(1)$ Hash Match Verification:** The pipeline checks candidate document $N$-gram signatures against the evaluation hash matrix in memory:
-* **Zero Hash Matches:** The document is cleared immediately as non-contaminated and advances to Step 11.
-* **Hash Collision Detected:** The document is flagged as a potential leak candidate and routed to Tier 2 for sequence alignment validation.
 
-
+- **Zero Hash Matches:** The document is cleared immediately as non-contaminated and advances to Step 11.
+- **Hash Collision Detected:** The document is flagged as a potential leak candidate and routed to Tier 2 for sequence alignment validation.
 
 ### Stage 3: Tier 2 - Longest Common Subsequence (LCS) & Sequence Alignment Verification
 
@@ -86,29 +85,27 @@ For candidate records flagged in Tier 1, the engine executes an explicit string 
 
 $$\text{LCS Ratio} = \frac{\text{Length}\left( \text{LCS}(D_{\text{train}}, D_{\text{bench}}) \right)}{\text{Length}(D_{\text{bench}})}$$
 
+1. **Decontamination Decision Boundaries:**
 
-2. **Decontamination Decision Boundaries:**
-* **Exact Sequence Match:** If the candidate record shares $\ge 20$ consecutive identical tokens with a benchmark evaluation item, it represents a direct structural leak.
-* **Substantial Subsequence Overlap:** If $\text{LCS Ratio} > 0.20$, the matching benchmark sections are surgically redacted, or the entire record is evicted from the training stream via a zero-copy Boolean mask array.
-
-
+- **Exact Sequence Match:** If the candidate record shares $\ge 20$ consecutive identical tokens with a benchmark evaluation item, it represents a direct structural leak.
+- **Substantial Subsequence Overlap:** If $\text{LCS Ratio} > 0.20$, the matching benchmark sections are surgically redacted, or the entire record is evicted from the training stream via a zero-copy Boolean mask array.
 
 ---
 
 ## 4. Decontamination Strategy Matrix
 
-| Document Contamination Profile | Structural / Match Signature | Theoretical Engine | Pipeline Action | Downstream Impact in Phase 3 |
-| --- | --- | --- | --- | --- |
-| **Un-Contaminated Training Record** | Zero $13$-gram hash collisions with evaluation index. | Vectorized Sliding Window Hash Filter | **Retained:** Advances to Step 11. | Re-converged data advances to pre-tokenization audit. |
-| **Coincidental Phrase Overlap** | $13$-gram match present, but $\text{LCS Ratio} \le 0.20$ and $< 20$ consecutive tokens. | LCS Alignment & Transducer Engine | **Retained:** Flagged as false positive match. | Preserves valid domain prose without false-positive dropping. |
-| **Partial Evaluation Leakage** | $\text{LCS Ratio} > 0.20$ relative to benchmark item length. | String Transducer Alignment Engine | **Surgically Redacted:** Leaked sub-sequence removed. | Eliminates benchmark prompt overlaps while retaining surrounding text. |
-| **Direct Benchmark Match** | $\ge 20$ consecutive token match or exact question-answer match. | FST String Transducer Engine | **Pruned:** Document fully evicted. | Guarantees absolute integrity of automated model registry gatekeepers. |
+| Document Contamination Profile      | Structural / Match Signature                                                            | Theoretical Engine                    | Pipeline Action                                       | Downstream Impact in Phase 3                                           |
+| ----------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Un-Contaminated Training Record** | Zero $13$-gram hash collisions with evaluation index.                                   | Vectorized Sliding Window Hash Filter | **Retained:** Advances to Step 11.                    | Re-converged data advances to pre-tokenization audit.                  |
+| **Coincidental Phrase Overlap**     | $13$-gram match present, but $\text{LCS Ratio} \le 0.20$ and $< 20$ consecutive tokens. | LCS Alignment & Transducer Engine     | **Retained:** Flagged as false positive match.        | Preserves valid domain prose without false-positive dropping.          |
+| **Partial Evaluation Leakage**      | $\text{LCS Ratio} > 0.20$ relative to benchmark item length.                            | String Transducer Alignment Engine    | **Surgically Redacted:** Leaked sub-sequence removed. | Eliminates benchmark prompt overlaps while retaining surrounding text. |
+| **Direct Benchmark Match**          | $\ge 20$ consecutive token match or exact question-answer match.                        | FST String Transducer Engine          | **Pruned:** Document fully evicted.                   | Guarantees absolute integrity of automated model registry gatekeepers. |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Finite State Transducer (FST) Matrices:** Memory-efficient, high-throughput string transducer structures capable of holding millions of 64-bit integer benchmark hashes in memory.
-* **Sliding Window N-Gram Hash Generators:** Vectorized hash computation utilities engineered to slice text streams into overlapping $N$-grams and generate signatures at microsecond speeds.
-* **Longest Common Subsequence (LCS) Engines:** Sequence alignment utilities designed to calculate sub-sequence overlap ratios between candidate records and target benchmark sets.
-* **Automated Registry Sync Hooks:** Workflow orchestrator synchronization hooks that dynamically pull the latest benchmark suites from the evaluation catalog before pipeline execution.
+- **Finite State Transducer (FST) Matrices:** Memory-efficient, high-throughput string transducer structures capable of holding millions of 64-bit integer benchmark hashes in memory.
+- **Sliding Window N-Gram Hash Generators:** Vectorized hash computation utilities engineered to slice text streams into overlapping $N$-grams and generate signatures at microsecond speeds.
+- **Longest Common Subsequence (LCS) Engines:** Sequence alignment utilities designed to calculate sub-sequence overlap ratios between candidate records and target benchmark sets.
+- **Automated Registry Sync Hooks:** Workflow orchestrator synchronization hooks that dynamically pull the latest benchmark suites from the evaluation catalog before pipeline execution.

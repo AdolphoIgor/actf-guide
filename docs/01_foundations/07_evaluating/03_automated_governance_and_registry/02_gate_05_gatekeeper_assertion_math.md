@@ -59,8 +59,8 @@ Model (θ_base)          ├─────────────────�
 
 Where:
 
-* $n_{10}$ is the number of **regressions** (baseline correct, candidate incorrect).
-* $n_{01}$ is the number of **improvements** (baseline incorrect, candidate correct).
+- $n_{10}$ is the number of **regressions** (baseline correct, candidate incorrect).
+- $n_{01}$ is the number of **improvements** (baseline incorrect, candidate correct).
 
 To test the null hypothesis $H_0: P(\text{Regression}) = P(\text{Improvement})$ against $H_1: P(\text{Improvement}) > P(\text{Regression})$, the continuity-corrected **McNemar Chi-Squared Statistic** is evaluated:
 
@@ -70,7 +70,7 @@ For small discordant counts ($n_{01} + n_{10} < 25$), the exact two-tailed Binom
 
 $$p\text{-value} = 2 \sum_{k=n_{01}}^{n_{01} + n_{10}} \binom{n_{01} + n_{10}}{k} \left(\frac{1}{2}\right)^{n_{01} + n_{10}}$$
 
-* **Gatekeeper Rejection Criterion:** If $n_{10} > n_{01}$ and $p < 0.05$, the candidate model introduces a statistically significant capability regression and is rejected.
+- **Gatekeeper Rejection Criterion:** If $n_{10} > n_{01}$ and $p < 0.05$, the candidate model introduces a statistically significant capability regression and is rejected.
 
 ---
 
@@ -270,11 +270,11 @@ class GatekeeperAssertionEngine:
         Returns: (chi2_stat, p_value, n_regressions, n_improvements)
         """
         assert len(baseline_correct) == len(candidate_correct), "Array length mismatch"
-        
+
         # Contingency counts
         n_10 = int(np.sum((baseline_correct == 1) & (candidate_correct == 0))) # Regressions
         n_01 = int(np.sum((baseline_correct == 0) & (candidate_correct == 1))) # Improvements
-        
+
         total_discordant = n_10 + n_01
         if total_discordant == 0:
             return 0.0, 1.0, 0, 0
@@ -395,7 +395,7 @@ class GatekeeperAssertionEngine:
         for name, (base_arr, cand_arr) in benchmark_binary_runs.items():
             base_acc = float(np.mean(base_arr))
             cand_acc = float(np.mean(cand_arr))
-            
+
             # 1. McNemar Significance Test
             chi2, p_val, n_reg, n_imp = self.compute_mcnemar_test(base_arr, cand_arr)
 
@@ -447,12 +447,12 @@ class GatekeeperAssertionEngine:
 
 ## 6. Gate 5 Production Assertion Matrix
 
-| Assertion Dimension | Target Metric | Mathematical Condition | Threshold | Action on Failure |
-| --- | --- | --- | --- | --- |
-| **Code Syntax** | AST Parse Success Rate | $\text{Rate}_{\text{AST}} == 1.0$ | $100\%$ | **Hard Reject**; quarantine checkpoint |
-| **Turn Termination** | EOS Delimiter Emission | $\text{Rate}_{\text{EOS}} \ge 0.99$ | $\ge 99.0\%$ | **Hard Reject**; runaway generation |
-| **Data Safety** | PII Entity Count | $\sum \text{Leaks} == 0$ | $0$ leaks | **Hard Reject**; audit training data |
-| **Cache Parity** | Max Absolute Logit Delta | $\Vert{}Z_{\text{naive}} - Z_{\text{cached}}\Vert{}_\infty < \epsilon$ | $< 10^{-3}$ | **Hard Reject**; inspect RoPE offsets |
-| **Benchmark Regression** | McNemar Paired Chi-Square | $p \ge 0.05 \lor n_{\text{improvements}} \ge n_{\text{regressions}}$ | $p < 0.05$ | **Statistical Reject**; capability loss |
-| **Non-Inferiority** | Bootstrap Lower $95\%$ CI | $L_{0.025}(\Delta) > -\delta_{\text{margin}}$ | $\ge -0.5\%$ | **Statistical Reject**; margin breached |
-| **Probability Calibration** | Expected Calibration Error | $\text{ECE} \le \text{ECE}_{\max}$ | $\le 0.06$ | **Calibration Reject**; temperature scaling |
+| Assertion Dimension         | Target Metric              | Mathematical Condition                                                 | Threshold    | Action on Failure                           |
+| --------------------------- | -------------------------- | ---------------------------------------------------------------------- | ------------ | ------------------------------------------- |
+| **Code Syntax**             | AST Parse Success Rate     | $\text{Rate}_{\text{AST}} == 1.0$                                      | $100\%$      | **Hard Reject**; quarantine checkpoint      |
+| **Turn Termination**        | EOS Delimiter Emission     | $\text{Rate}_{\text{EOS}} \ge 0.99$                                    | $\ge 99.0\%$ | **Hard Reject**; runaway generation         |
+| **Data Safety**             | PII Entity Count           | $\sum \text{Leaks} == 0$                                               | $0$ leaks    | **Hard Reject**; audit training data        |
+| **Cache Parity**            | Max Absolute Logit Delta   | $\Vert{}Z_{\text{naive}} - Z_{\text{cached}}\Vert{}_\infty < \epsilon$ | $< 10^{-3}$  | **Hard Reject**; inspect RoPE offsets       |
+| **Benchmark Regression**    | McNemar Paired Chi-Square  | $p \ge 0.05 \lor n_{\text{improvements}} \ge n_{\text{regressions}}$   | $p < 0.05$   | **Statistical Reject**; capability loss     |
+| **Non-Inferiority**         | Bootstrap Lower $95\%$ CI  | $L_{0.025}(\Delta) > -\delta_{\text{margin}}$                          | $\ge -0.5\%$ | **Statistical Reject**; margin breached     |
+| **Probability Calibration** | Expected Calibration Error | $\text{ECE} \le \text{ECE}_{\max}$                                     | $\le 0.06$   | **Calibration Reject**; temperature scaling |

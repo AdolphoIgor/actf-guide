@@ -113,7 +113,7 @@ $$p_{\text{lower}}, p_{\text{upper}} = \frac{\hat{p} + \frac{z^2}{2N} \pm z \sqr
 
 Where $z = 1.96$ for a $95\%$ confidence level ($\alpha = 0.05$).
 
-* **Promotion Threshold:** The candidate is certified for deployment only if $p_{\text{lower}} \ge 0.50$ (statistically non-inferior to baseline).
+- **Promotion Threshold:** The candidate is certified for deployment only if $p_{\text{lower}} \ge 0.50$ (statistically non-inferior to baseline).
 
 ---
 
@@ -137,7 +137,7 @@ $$R_i = 1000 + 400 \cdot \gamma_i$$
 
 Below is the standalone implementation of `ProductionLLMJudgeScorer`. It supports structured JSON schema enforcement, bidirectional order swapping, Wilson confidence interval calculation, and Bradley-Terry Elo tracking:
 
-```python
+````python
 from dataclasses import dataclass
 import json
 import math
@@ -329,7 +329,7 @@ You must respond in valid JSON matching this schema:
             certified_promotion=is_certified
         )
 
-```
+````
 
 ---
 
@@ -360,10 +360,10 @@ You must respond in valid JSON matching this schema:
 
 ## 6. Diagnostic Failure Matrix
 
-| Failure Symptom | Detection Point | Root Cause | Engineering Remediation |
-| --- | --- | --- | --- |
-| **High Position Inconsistency ($> 15\%$)** | Symmetric Order Pairing | Judge exhibits strong position bias toward Candidate 1 | Enforce detailed Chain-of-Thought justification prior to decision token |
-| **Verbosity Inflation** | Response Length vs. Score Correlation | Baseline generates overly concise answers; judge favors long text | Add explicit length penalty instructions and target token caps |
-| **Self-Enhancement Skew** | Model Family Ablation | Judge favors models sharing its tokenizer or pre-training data | Use multi-judge panels with distinct model families (e.g., Llama + Claude) |
-| **Wide Confidence Interval ($L_{\text{CI}} < 0.50$)** | Wilson Score Calculation | Insufficient evaluation samples ($N < 100$) | Scale evaluation dataset to $N \ge 250$ balanced prompt items |
-| **Uncalibrated Score Clustering** | Pointwise Scoring Distribution | Judge assigns score 4 or 5 to all inputs without variance | Anchor prompts with concrete few-shot rubric scoring examples |
+| Failure Symptom                                       | Detection Point                       | Root Cause                                                        | Engineering Remediation                                                    |
+| ----------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **High Position Inconsistency ($> 15\%$)**            | Symmetric Order Pairing               | Judge exhibits strong position bias toward Candidate 1            | Enforce detailed Chain-of-Thought justification prior to decision token    |
+| **Verbosity Inflation**                               | Response Length vs. Score Correlation | Baseline generates overly concise answers; judge favors long text | Add explicit length penalty instructions and target token caps             |
+| **Self-Enhancement Skew**                             | Model Family Ablation                 | Judge favors models sharing its tokenizer or pre-training data    | Use multi-judge panels with distinct model families (e.g., Llama + Claude) |
+| **Wide Confidence Interval ($L_{\text{CI}} < 0.50$)** | Wilson Score Calculation              | Insufficient evaluation samples ($N < 100$)                       | Scale evaluation dataset to $N \ge 250$ balanced prompt items              |
+| **Uncalibrated Score Clustering**                     | Pointwise Scoring Distribution        | Judge assigns score 4 or 5 to all inputs without variance         | Anchor prompts with concrete few-shot rubric scoring examples              |

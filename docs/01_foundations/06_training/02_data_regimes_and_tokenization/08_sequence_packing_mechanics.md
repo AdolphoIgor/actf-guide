@@ -20,7 +20,7 @@ Because standard self-attention computes pairwise dot products across the entire
 
 ## 2. Contiguous Sequence Packing (The Multipack Strategy)
 
-**Sequence Packing** (also known as *Multipack* or *Example Packing*) eliminates padding overhead entirely by concatenating multiple independent, variable-length conversations end-to-end into a single contiguous 1D token array, separated only by native delimiter tokens (`<|im_end|>` or `<|end_of_text|>`).
+**Sequence Packing** (also known as _Multipack_ or _Example Packing_) eliminates padding overhead entirely by concatenating multiple independent, variable-length conversations end-to-end into a single contiguous 1D token array, separated only by native delimiter tokens (`<|im_end|>` or `<|end_of_text|>`).
 
 This continuous stream is sliced into dense, uniform $B \times L$ tensor matrices where every single token cell contains valid training data.
 
@@ -43,9 +43,9 @@ Total Tokens Processed: 15  |  Actual Informational Tokens: 15  |  Padding Ineff
 
 ### Computational Benefits
 
-* **100% Hardware FLOP Utilization:** Every matrix multiplication executed by Tensor Cores operates on valid training signal.
-* **Deterministic VRAM Allocation:** Dynamic activation memory ($M_{\text{act}}$) remains completely constant across iterations, eliminating unexpected Out-of-Memory (OOM) crashes triggered by outlier long batches.
-* **Accelerated Training Convergence:** With zero pad tokens, the effective token throughput per GPU second increases by $1.4\times\text{--}2.5\times$.
+- **100% Hardware FLOP Utilization:** Every matrix multiplication executed by Tensor Cores operates on valid training signal.
+- **Deterministic VRAM Allocation:** Dynamic activation memory ($M_{\text{act}}$) remains completely constant across iterations, eliminating unexpected Out-of-Memory (OOM) crashes triggered by outlier long batches.
+- **Accelerated Training Convergence:** With zero pad tokens, the effective token throughput per GPU second increases by $1.4\times\text{--}2.5\times$.
 
 ---
 
@@ -200,7 +200,7 @@ class ContiguousSequencePacker:
         all_labels: List[int] = []
         all_position_ids: List[int] = []
         cu_seqlens: List[int] = [0]
-        
+
         current_cumulative_len = 0
 
         for record in conversations:
@@ -215,10 +215,10 @@ class ContiguousSequencePacker:
 
             all_input_ids.extend(inp_ids)
             all_labels.extend(lbl_ids)
-            
+
             # Reset position IDs to start at 0 for every document
             all_position_ids.extend(list(range(doc_len)))
-            
+
             current_cumulative_len += doc_len
             cu_seqlens.append(current_cumulative_len)
 
@@ -256,7 +256,7 @@ class ContiguousSequencePacker:
 
 Before feeding packed tensor batches to the model, the data loader must satisfy the **Gate 4 Pre-Flight Invariants**:
 
-* **Tensor Rectangularity:** Matrix shape evaluates strictly to $(B, L)$ where $B = \lfloor \frac{\sum \text{len}(D_i)}{L} \rfloor$.
-* **Integer Bounds:** Every integer in `input_ids` falls strictly within the active vocabulary range ($0 \le \text{ID} < V$).
-* **Label Complementarity:** Every element in `labels` is either equal to its corresponding `input_ids` token or exactly equal to the ignore index ($-100$).
-* **Position Reset Alignment:** The value `0` in `position_ids` occurs at least once per document boundary in every packed row.
+- **Tensor Rectangularity:** Matrix shape evaluates strictly to $(B, L)$ where $B = \lfloor \frac{\sum \text{len}(D_i)}{L} \rfloor$.
+- **Integer Bounds:** Every integer in `input_ids` falls strictly within the active vocabulary range ($0 \le \text{ID} < V$).
+- **Label Complementarity:** Every element in `labels` is either equal to its corresponding `input_ids` token or exactly equal to the ignore index ($-100$).
+- **Position Reset Alignment:** The value `0` in `position_ids` occurs at least once per document boundary in every packed row.

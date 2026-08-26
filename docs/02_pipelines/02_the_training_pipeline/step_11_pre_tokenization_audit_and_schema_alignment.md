@@ -2,7 +2,7 @@
 
 ## 1. Core Objective & Operational Placement
 
-Executing as the initial stage of the **Training Pipeline**, Step 11 bridges universal, model-agnostic Silver data with model-specific tokenizer requirements. 
+Executing as the initial stage of the **Training Pipeline**, Step 11 bridges universal, model-agnostic Silver data with model-specific tokenizer requirements.
 
 Operating in-memory within `/dev/shm`, Step 11 dynamically extracts the base model's native Jinja2 chat template (e.g., ChatML for `Qwen2.5-0.5B-Instruct` or Header ID formatting for `Llama-3.2`) and serializes structured JSON dialogues into properly formatted prompt strings immediately prior to tokenization.
 
@@ -26,20 +26,19 @@ By executing chat templating Just-In-Time (JIT) inside the training container, s
 
 1. **Dynamic Jinja2 Template Extraction:** The training worker queries `tokenizer.chat_template` from the model's configuration metadata.
 2. **Structural Control Token Injection:** Wraps user, system, and assistant turns with model-specific delimiters:
-* **ChatML (`Qwen2.5`):**
+
+- **ChatML (`Qwen2.5`):**
+
 ```text
 <|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nCalculate 2+2.<|im_end|>\n<|im_start|>assistant\n2 + 2 = 4.<|im_end|>
 
 ```
 
+- **Llama-3 (`Llama-3.2`):**
 
-* **Llama-3 (`Llama-3.2`):**
 ```text
 <|start_header_id|>system<|end_header_id|>\nYou are a helpful assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>\nCalculate 2+2.<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n2 + 2 = 4.<|eot_id|>
 
 ```
 
-
-
-
-3. **In-Memory Buffer Streaming:** Formatted text strings pass directly into Step 12 via zero-copy RAM buffers without disk serialization.
+1. **In-Memory Buffer Streaming:** Formatted text strings pass directly into Step 12 via zero-copy RAM buffers without disk serialization.

@@ -88,27 +88,27 @@ To ensure incoming data does not duplicate records processed in previous success
 
 $$\text{Lookup Condition}: \text{If } H(S) \in \text{Index}_{\text{Historical}} \implies \text{Purge Duplicate Record}$$
 
-3. **Silver Layer Hash Manifest Persistence:** Hashes of surviving unique records are atomically written to the RocksDB index. Crucially, these unique hash signatures are persisted alongside the generated Silver storage files (e.g., embedded within Parquet metadata manifests) to guarantee that future DAG runs retain complete state continuity across execution cycles.
+1. **Silver Layer Hash Manifest Persistence:** Hashes of surviving unique records are atomically written to the RocksDB index. Crucially, these unique hash signatures are persisted alongside the generated Silver storage files (e.g., embedded within Parquet metadata manifests) to guarantee that future DAG runs retain complete state continuity across execution cycles.
 
 ---
 
 ## 4. Exact Deduplication & State Tracking Matrix
 
-| Deduplication Scope | Execution Mechanism | Theoretical Storage Architecture | Operational Action | Downstream LLM Impact |
-| --- | --- | --- | --- | --- |
-| **Cross-Partition Duplicates** | MurmurHash3 Routing: $H(S) \pmod{K}$ | Deterministic Partition Channel Shuffle | Group identical records into unified processing channels. | Enables $\mathcal{O}(N)$ parallel cross-partition duplicate detection. |
-| **Intra-Batch Duplicates** | Fast Localized In-Memory Shuffle | Contiguous Vectorized Memory Arrays | Immediate batch duplicate purging. | Reduces memory footprint before querying historical indexes. |
-| **Historical Run Duplicates** | Bloom Filter + Embedded RocksDB Lookup | Direct-Mapped Virtual Memory (`/dev/shm/dedup_index`) | Historical duplicate eviction against prior execution DAGs. | Prevents dataset re-contamination across continuous training runs. |
-| **High-Concurrency Reads/Writes** | Atomic Lock-Free Skiplists | Native C++ Concurrency (GIL Bypass) | Bypasses Python interpreter lock penalties. | Maximizes processing throughput without thread-lock contention. |
-| **Volume Spike Spills** | LSM-Tree Hierarchical Storage | Embedded RocksDB (RAM to Local NVMe) | Seamless memory-to-disk flushing on memory exhaustion. | Guarantees pipeline stability without Out-of-Memory (OOM) failures. |
-| **State Continuity & Recovery** | Silver File Hash Manifest Export | Parquet Metadata / Silver Storage Sidecar | Persists non-duplicated hashes alongside Silver dataset files. | Ensures absolute state lineage and reproducible deduplication footprints. |
+| Deduplication Scope               | Execution Mechanism                    | Theoretical Storage Architecture                      | Operational Action                                             | Downstream LLM Impact                                                     |
+| --------------------------------- | -------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Cross-Partition Duplicates**    | MurmurHash3 Routing: $H(S) \pmod{K}$   | Deterministic Partition Channel Shuffle               | Group identical records into unified processing channels.      | Enables $\mathcal{O}(N)$ parallel cross-partition duplicate detection.    |
+| **Intra-Batch Duplicates**        | Fast Localized In-Memory Shuffle       | Contiguous Vectorized Memory Arrays                   | Immediate batch duplicate purging.                             | Reduces memory footprint before querying historical indexes.              |
+| **Historical Run Duplicates**     | Bloom Filter + Embedded RocksDB Lookup | Direct-Mapped Virtual Memory (`/dev/shm/dedup_index`) | Historical duplicate eviction against prior execution DAGs.    | Prevents dataset re-contamination across continuous training runs.        |
+| **High-Concurrency Reads/Writes** | Atomic Lock-Free Skiplists             | Native C++ Concurrency (GIL Bypass)                   | Bypasses Python interpreter lock penalties.                    | Maximizes processing throughput without thread-lock contention.           |
+| **Volume Spike Spills**           | LSM-Tree Hierarchical Storage          | Embedded RocksDB (RAM to Local NVMe)                  | Seamless memory-to-disk flushing on memory exhaustion.         | Guarantees pipeline stability without Out-of-Memory (OOM) failures.       |
+| **State Continuity & Recovery**   | Silver File Hash Manifest Export       | Parquet Metadata / Silver Storage Sidecar             | Persists non-duplicated hashes alongside Silver dataset files. | Ensures absolute state lineage and reproducible deduplication footprints. |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Cryptographic / Non-Cryptographic Hash Engines:** High-speed string hashing algorithms (MurmurHash3 / XXHash) engineered to generate uniformly distributed 64-bit integer signatures with minimal collision probability.
-* **Embedded Virtual-Memory Key-Value Storage (RocksDB):** Embedded C++ Key-Value store bound directly to `/dev/shm`, providing direct-mapped physical RAM reads/writes without network or socket serialization overhead.
-* **Lock-Free Atomic Skiplists:** Native C++ concurrent data structures configured for parallel multi-threaded memory access, completely bypassing the Python Global Interpreter Lock (GIL).
-* **LSM-Tree Memory-to-Disk Tiering:** Log-Structured Merge-tree architecture capable of flushing MemTable blocks to local NVMe SSD storage, providing a "No-OOM" safety net during data volume spikes.
-* **Probabilistic Bloom Filters & Silver File Manifests:** Space-efficient binary footprint dictionaries combined with persistent Silver file sidecar manifests to guarantee historical state tracking across successful DAG runs.
+- **Cryptographic / Non-Cryptographic Hash Engines:** High-speed string hashing algorithms (MurmurHash3 / XXHash) engineered to generate uniformly distributed 64-bit integer signatures with minimal collision probability.
+- **Embedded Virtual-Memory Key-Value Storage (RocksDB):** Embedded C++ Key-Value store bound directly to `/dev/shm`, providing direct-mapped physical RAM reads/writes without network or socket serialization overhead.
+- **Lock-Free Atomic Skiplists:** Native C++ concurrent data structures configured for parallel multi-threaded memory access, completely bypassing the Python Global Interpreter Lock (GIL).
+- **LSM-Tree Memory-to-Disk Tiering:** Log-Structured Merge-tree architecture capable of flushing MemTable blocks to local NVMe SSD storage, providing a "No-OOM" safety net during data volume spikes.
+- **Probabilistic Bloom Filters & Silver File Manifests:** Space-efficient binary footprint dictionaries combined with persistent Silver file sidecar manifests to guarantee historical state tracking across successful DAG runs.

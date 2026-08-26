@@ -65,7 +65,7 @@ Effect of Temperature Scaling on Logit Distribution:
 Low Temperature (T = 0.2):            Neutral (T = 1.0):             High Temperature (T = 1.8):
 Peak-Sharpened / Low Entropy          Base Model Distribution        Flattened / High Entropy
 
-            █                                      █                               
+            █                                      █
             █                                  █   █                               ▄   █   ▄   ▃
             █   ▂                          █   █   █   ▂                       █   █   █   █   █
     ────────┴───┴───                   ────┴───┴───┴───┴───                ────┴───┴───┴───┴───┴───
@@ -80,16 +80,10 @@ Peak-Sharpened / Low Entropy          Base Model Distribution        Flattened /
 
 $$\lim_{T \to 0^+} P(y_t = i) = \begin{cases} 1, & \text{if } z_i = \max_j z_j \\ 0, & \text{otherwise} \end{cases}$$
 
-
-
-As $T$ approaches zero, the softmax output converges to a one-hot indicator (Dirac delta distribution) centered on the argmax token, making generation purely deterministic.
-2. **Base Calibration ($T = 1.0$):**
-The distribution reflects the unmodified predictive confidence of the pre-trained model.
-3. **Uniform Limit ($T \to \infty$):**
+As $T$ approaches zero, the softmax output converges to a one-hot indicator (Dirac delta distribution) centered on the argmax token, making generation purely deterministic. 2. **Base Calibration ($T = 1.0$):**
+The distribution reflects the unmodified predictive confidence of the pre-trained model. 3. **Uniform Limit ($T \to \infty$):**
 
 $$\lim_{T \to \infty} P(y_t = i) = \frac{\exp(0)}{\sum_{j=1}^V \exp(0)} = \frac{1}{\vert{}V\vert{}}$$
-
-
 
 As $T$ approaches infinity, differences between logits become negligible, and the distribution converges to a uniform distribution over all $\vert{}V\vert{}$ vocabulary tokens.
 
@@ -294,11 +288,11 @@ class UnifiedSampler:
 
 ### Sampling Strategy Comparison
 
-| Strategy | Tuning Parameter | Space Level | Truncation Type | Failure Mode on Misconfiguration |
-| --- | --- | --- | --- | --- |
-| **Temperature** | $T \in (0, \infty)$ | Logit Space | Smooth Rescaling | $T \to 0$: Repetition; $T > 1.5$: Gibberish |
-| **Top-$k$** | $k \in [1, \vert{}V\vert{}]$ | Logit Space | Fixed Count | $k$ too small: Monotonous; $k$ too large: Tail noise |
-| **Top-$p$** | $p \in (0, 1.0]$ | Probability Space | Dynamic Mass | $p$ too small: Truncation; $p \to 1.0$: Tail noise |
+| Strategy        | Tuning Parameter             | Space Level       | Truncation Type  | Failure Mode on Misconfiguration                     |
+| --------------- | ---------------------------- | ----------------- | ---------------- | ---------------------------------------------------- |
+| **Temperature** | $T \in (0, \infty)$          | Logit Space       | Smooth Rescaling | $T \to 0$: Repetition; $T > 1.5$: Gibberish          |
+| **Top-$k$**     | $k \in [1, \vert{}V\vert{}]$ | Logit Space       | Fixed Count      | $k$ too small: Monotonous; $k$ too large: Tail noise |
+| **Top-$p$**     | $p \in (0, 1.0]$             | Probability Space | Dynamic Mass     | $p$ too small: Truncation; $p \to 1.0$: Tail noise   |
 
 ### Recommended Production Parameter Presets
 

@@ -62,8 +62,6 @@ Before analyzing semantic or structural quality, the pipeline verifies whether t
 
 $$\text{Error Ratio} = \frac{\text{Count}(\text{Lexical Error Tokens})}{\text{Total Token Count}}$$
 
-
-
 If $\text{Error Ratio} > 0.05$, the document is flagged as corrupted or un-parseable syntax and purged immediately.
 
 ### Stage 2: Structural Complexity & Maintainability Metrics
@@ -75,13 +73,10 @@ Syntactically valid code is evaluated against software maintainability and struc
 
 $$M = E - N + 2P$$
 
-
-
 where $E$ represents the number of edges, $N$ represents the number of nodes, and $P$ represents the number of connected components in the control-flow graph.
-* **Low Complexity Limit ($M < 2$):** Flags trivial function stubs, empty getter/setter wrappers, or non-informative boilerplate across large files.
-* **High Complexity Limit ($M > 50$):** Flags un-maintainable spaghetti code, machine-generated decision trees, or obfuscated control flows. Records outside the valid $2 \le M \le 50$ envelope are purged.
 
-
+- **Low Complexity Limit ($M < 2$):** Flags trivial function stubs, empty getter/setter wrappers, or non-informative boilerplate across large files.
+- **High Complexity Limit ($M > 50$):** Flags un-maintainable spaghetti code, machine-generated decision trees, or obfuscated control flows. Records outside the valid $2 \le M \le 50$ envelope are purged.
 
 ### Stage 3: Domain-Specific Neural Quality Scoring
 
@@ -92,24 +87,22 @@ For complex code bases and LaTeX documents, text payloads pass through a special
 
 $$\text{Retention Condition}: S_{\text{domain}} \ge 0.60$$
 
-
-
 ---
 
 ## 4. Domain Quality Strategy Matrix
 
-| Technical Content Profile | Structural & Metric Profile | Theoretical Engine | Pipeline Action | Downstream Impact in Phase 2 |
-| --- | --- | --- | --- | --- |
-| **High-Quality Production Code** | Valid lexer tokens, $0.05 \le \text{Comment Ratio} \le 0.40$, $2 \le M \le 30$, $S_{\text{domain}} \ge 0.60$. | Language Lexer + Domain Quality Model | **Retained:** Passes quality gate. | Advanced to Step 8b for AST syntax validation. |
-| **Empty Function / Stub File** | High stub-to-line ratio (`pass`, `return null`), Cyclomatic Complexity $M < 2$. | Structural AST Metric Profiler | **Pruned:** Flagged as trivial boilerplate and dropped. | Prevents model over-fitting on non-informative stubs. |
-| **Machine-Generated Spaghetti Code** | Extreme Cyclomatic Complexity ($M > 50$), deep nesting ($> 8$ scope levels), zero comments. | Control-Flow Complexity Engine | **Pruned:** Dropped to protect model attention mechanisms. | Prevents degradation of LLM reasoning convergence. |
-| **Corrupted / Partial Syntax File** | Lexer Error Ratio $> 0.05$, un-closed brackets or malformed string literals. | C-Implemented Lexer Backend | **Pruned:** Fails basic lexical tokenization pass. | Purges broken token sequences from the dataset. |
-| **Obfuscated / Variable-Renamed Dump** | High variable entropy, single-letter variable density $> 0.70$, $S_{\text{domain}} < 0.40$. | Quantized Domain Quality Model | **Pruned:** Dropped due to low instructional value. | Preserves corpus quality for code pre-training. |
+| Technical Content Profile              | Structural & Metric Profile                                                                                   | Theoretical Engine                    | Pipeline Action                                            | Downstream Impact in Phase 2                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------- |
+| **High-Quality Production Code**       | Valid lexer tokens, $0.05 \le \text{Comment Ratio} \le 0.40$, $2 \le M \le 30$, $S_{\text{domain}} \ge 0.60$. | Language Lexer + Domain Quality Model | **Retained:** Passes quality gate.                         | Advanced to Step 8b for AST syntax validation.        |
+| **Empty Function / Stub File**         | High stub-to-line ratio (`pass`, `return null`), Cyclomatic Complexity $M < 2$.                               | Structural AST Metric Profiler        | **Pruned:** Flagged as trivial boilerplate and dropped.    | Prevents model over-fitting on non-informative stubs. |
+| **Machine-Generated Spaghetti Code**   | Extreme Cyclomatic Complexity ($M > 50$), deep nesting ($> 8$ scope levels), zero comments.                   | Control-Flow Complexity Engine        | **Pruned:** Dropped to protect model attention mechanisms. | Prevents degradation of LLM reasoning convergence.    |
+| **Corrupted / Partial Syntax File**    | Lexer Error Ratio $> 0.05$, un-closed brackets or malformed string literals.                                  | C-Implemented Lexer Backend           | **Pruned:** Fails basic lexical tokenization pass.         | Purges broken token sequences from the dataset.       |
+| **Obfuscated / Variable-Renamed Dump** | High variable entropy, single-letter variable density $> 0.70$, $S_{\text{domain}} < 0.40$.                   | Quantized Domain Quality Model        | **Pruned:** Dropped due to low instructional value.        | Preserves corpus quality for code pre-training.       |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Language Lexer Backends:** High-performance lexical analysis engines configured to convert raw text streams into language-specific token streams while flagging lexical syntax errors.
-* **Control-Flow Graph Calculators:** Abstract Syntax Tree and complexity analysis utilities capable of building control-flow graphs to compute Cyclomatic Complexity ($M = E - N + 2P$) and nesting depth metrics.
-* **Quantized Domain Quality Classifiers:** Specialized, lightweight neural classification models fine-tuned on curated technical corpora to evaluate domain authority and instructional value.
+- **Language Lexer Backends:** High-performance lexical analysis engines configured to convert raw text streams into language-specific token streams while flagging lexical syntax errors.
+- **Control-Flow Graph Calculators:** Abstract Syntax Tree and complexity analysis utilities capable of building control-flow graphs to compute Cyclomatic Complexity ($M = E - N + 2P$) and nesting depth metrics.
+- **Quantized Domain Quality Classifiers:** Specialized, lightweight neural classification models fine-tuned on curated technical corpora to evaluate domain authority and instructional value.

@@ -57,12 +57,10 @@ Greedy search selects the token with the highest conditional probability at ever
 
 $$y_t = \arg\max_{v \in V} z_{t, v} = \arg\max_{v \in V} P(v \mid y_{<t}, X)$$
 
-* **Computational Complexity:** $\mathcal{O}(T)$ with zero memory or branching overhead.
-* **Failure Modes:**
-* **Myopic Optimization:** Greedy search makes decisions locally. An optimal token choice early on can lead directly to low-probability valleys later in the sequence.
-* **Degenerate Repetition Loops:** On open-ended generation tasks, greedy decoding frequently falls into self-reinforcing repetitive attractor loops (e.g., repeating phrases indefinitely).
-
-
+- **Computational Complexity:** $\mathcal{O}(T)$ with zero memory or branching overhead.
+- **Failure Modes:**
+- **Myopic Optimization:** Greedy search makes decisions locally. An optimal token choice early on can lead directly to low-probability valleys later in the sequence.
+- **Degenerate Repetition Loops:** On open-ended generation tasks, greedy decoding frequently falls into self-reinforcing repetitive attractor loops (e.g., repeating phrases indefinitely).
 
 ### B. Beam Search
 
@@ -74,8 +72,8 @@ $$\text{score}(\mathbf{y}_{1:t}) = \frac{1}{t^\alpha} \sum_{i=1}^t \log P(y_i \m
 
 Where $\alpha \in [0.6, 1.0]$ is a length normalization penalty preventing the search from systematically biasing toward shorter sequences.
 
-* **Where Beam Search Excels:** Closed-ended transduction problems with narrow output spaces (Machine Translation, Abstractive Summarization, Text-to-SQL).
-* **Where Beam Search Degrades:** Open-ended natural dialogue and creative reasoning. As demonstrated by Holtzman et al., high-probability beam search paths in open domains correspond to unnatural, bland, and repetitive text because human language does not consistently maximize point-wise token likelihood.
+- **Where Beam Search Excels:** Closed-ended transduction problems with narrow output spaces (Machine Translation, Abstractive Summarization, Text-to-SQL).
+- **Where Beam Search Degrades:** Open-ended natural dialogue and creative reasoning. As demonstrated by Holtzman et al., high-probability beam search paths in open domains correspond to unnatural, bland, and repetitive text because human language does not consistently maximize point-wise token likelihood.
 
 ---
 
@@ -104,9 +102,9 @@ Uniform / High Entropy               Unmodified Distribution         Peak-Sharpe
 
 ```
 
-* **$T \to 0$:** The distribution collapses to a Dirac delta function centered at the maximum logit ($\arg\max$). Equivalent to Greedy Search.
-* **$T = 1.0$:** Standard unmodified probability distribution as parameterized during pre-training.
-* **$T \to \infty$:** The distribution flattens into a uniform distribution $\mathcal{U}(1, V)$, maximizing entropy and hallucinations.
+- **$T \to 0$:** The distribution collapses to a Dirac delta function centered at the maximum logit ($\arg\max$). Equivalent to Greedy Search.
+- **$T = 1.0$:** Standard unmodified probability distribution as parameterized during pre-training.
+- **$T \to \infty$:** The distribution flattens into a uniform distribution $\mathcal{U}(1, V)$, maximizing entropy and hallucinations.
 
 ---
 
@@ -126,11 +124,9 @@ Renormalized:       [ "cat": 0.526, "dog": 0.316, "fish": 0.158 ]
 
 ```
 
-* **Limitation:** Top-$k$ uses a static threshold regardless of model confidence:
-* **When the model is confident:** (e.g., $P(\text{"Paris"}) = 0.98$), setting $k=50$ forces the sampler to include 49 improbable tail tokens.
-* **When the model is uncertain:** (flat distribution across 200 plausible options), setting $k=50$ truncates valid candidates prematurely.
-
-
+- **Limitation:** Top-$k$ uses a static threshold regardless of model confidence:
+- **When the model is confident:** (e.g., $P(\text{"Paris"}) = 0.98$), setting $k=50$ forces the sampler to include 49 improbable tail tokens.
+- **When the model is uncertain:** (flat distribution across 200 plausible options), setting $k=50$ truncates valid candidates prematurely.
 
 ---
 
@@ -212,13 +208,13 @@ Let $c(v)$ be the count of occurrences of token $v$ in the generated context win
 
 ## 5. Comparative Sampling Matrix
 
-| Decoding Strategy | Deterministic? | Computational Cost | Diversity Score | Primary Production Use Case |
-| --- | --- | --- | --- | --- |
-| **Greedy Search** | Yes | Lowest ($\mathcal{O}(1)$ selection) | Minimal | Code syntax, SQL, JSON extraction, arithmetic |
-| **Beam Search** | Yes | High ($\mathcal{O}(B)$ forward states) | Low | Machine translation, formal summarization |
-| **Top-$k$ Sampling** | No | Low ($\text{Top-}k$ sort) | Moderate | Legacy text generation recipes |
-| **Top-$p$ (Nucleus)** | No | Moderate (Full sort + prefix sum) | High | Conversational assistants, roleplay, creative writing |
-| **Min-$p$ Sampling** | No | Low (Threshold mask) | High | Modern LLM generation, extended reasoning, general chat |
+| Decoding Strategy     | Deterministic? | Computational Cost                     | Diversity Score | Primary Production Use Case                             |
+| --------------------- | -------------- | -------------------------------------- | --------------- | ------------------------------------------------------- |
+| **Greedy Search**     | Yes            | Lowest ($\mathcal{O}(1)$ selection)    | Minimal         | Code syntax, SQL, JSON extraction, arithmetic           |
+| **Beam Search**       | Yes            | High ($\mathcal{O}(B)$ forward states) | Low             | Machine translation, formal summarization               |
+| **Top-$k$ Sampling**  | No             | Low ($\text{Top-}k$ sort)              | Moderate        | Legacy text generation recipes                          |
+| **Top-$p$ (Nucleus)** | No             | Moderate (Full sort + prefix sum)      | High            | Conversational assistants, roleplay, creative writing   |
+| **Min-$p$ Sampling**  | No             | Low (Threshold mask)                   | High            | Modern LLM generation, extended reasoning, general chat |
 
 ---
 
@@ -265,7 +261,7 @@ class ProductionSampler(nn.Module):
         for b in range(B):
             unique_tokens = torch.unique(generated_tokens[b])
             token_logits = logits[b, unique_tokens]
-            
+
             # If logit is positive, divide by penalty; if negative, multiply
             updated_logits = torch.where(
                 token_logits > 0,
@@ -280,7 +276,7 @@ class ProductionSampler(nn.Module):
         """Filters out all tokens outside the top-k highest logits."""
         if k <= 0 or k >= logits.size(-1):
             return logits
-        
+
         top_k_values, _ = torch.topk(logits, k, dim=-1)
         min_top_k_val = top_k_values[..., -1, None]
         return torch.where(logits < min_top_k_val, float("-inf"), logits)
@@ -322,7 +318,7 @@ class ProductionSampler(nn.Module):
     ) -> torch.Tensor:
         """
         Samples next token IDs from raw logits.
-        
+
         Args:
             logits: Unnormalized logits tensor of shape (Batch, Vocab_Size)
             generated_tokens: Past token IDs of shape (Batch, Context_Len)

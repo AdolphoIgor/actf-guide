@@ -60,8 +60,8 @@ Because $\exp(-\infty) = 0$, all future key positions receive zero attention wei
 
 During training, the decoder processes the entire sequence in a single forward pass. This is achieved by creating two views of the token stream offset by exactly one position:
 
-* **Input Sequence ($X$):** The prompt and context from index $0$ to $T-1$.
-* **Target Sequence ($Y$):** The expected next tokens from index $1$ to $T$.
+- **Input Sequence ($X$):** The prompt and context from index $0$ to $T-1$.
+- **Target Sequence ($Y$):** The expected next tokens from index $1$ to $T$.
 
 ```text
 Raw Corpus Stream: [ "ROMEO", ":", " ", "Shall", " ", "I", " ", "speak" ]
@@ -84,11 +84,11 @@ def get_batch(split: str, train_data: torch.Tensor, val_data: torch.Tensor, batc
     data = train_data if split == 'train' else val_data
     # Sample random starting indices
     ix = torch.randint(len(data) - block_size, (batch_size,))
-    
+
     # Slice inputs (x) and targets shifted by 1 (y)
     x = torch.stack([data[i:i + block_size] for i in ix])
     y = torch.stack([data[i + 1:i + block_size + 1] for i in ix])
-    
+
     return x.to(device), y.to(device)
 
 ```
@@ -156,15 +156,15 @@ class CausalSelfAttention(nn.Module):
         assert n_embd % n_head == 0, "n_embd must be divisible by n_head"
         self.n_head = n_head
         self.head_dim = n_embd // n_head
-        
+
         # Combined Q, K, V linear projections in a single matrix
         self.c_attn = nn.Linear(n_embd, 3 * n_embd, bias=False)
         # Output projection
         self.c_proj = nn.Linear(n_embd, n_embd, bias=False)
-        
+
         self.attn_dropout = nn.Dropout(dropout)
         self.resid_dropout = nn.Dropout(dropout)
-        
+
         # Register lower-triangular causal mask buffer
         self.register_buffer(
             "tril",
@@ -256,7 +256,7 @@ class MiniGPT(nn.Module):
         self.blocks = nn.ModuleList([
             Block(n_embd, n_head, block_size, dropout) for _ in range(n_layer)
         ])
-        
+
         # Final LayerNorm and Output Head
         self.ln_f = nn.LayerNorm(n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size, bias=False)
@@ -323,10 +323,10 @@ class MiniGPT(nn.Module):
         for _ in range(max_new_tokens):
             # Crop context if it exceeds max block_size
             idx_cond = idx if idx.size(1) <= self.block_size else idx[:, -self.block_size:]
-            
+
             # Forward the model to obtain logits
             logits, _ = self(idx_cond)
-            
+
             # Focus only on the last time step
             logits = logits[:, -1, :] / temperature
 
@@ -337,10 +337,10 @@ class MiniGPT(nn.Module):
 
             # Softmax to obtain probabilities
             probs = F.softmax(logits, dim=-1)
-            
+
             # Sample next token ID from categorical distribution
             idx_next = torch.multinomial(probs, num_samples=1)
-            
+
             # Append sampled token to sequence and continue
             idx = torch.cat((idx, idx_next), dim=1)
 

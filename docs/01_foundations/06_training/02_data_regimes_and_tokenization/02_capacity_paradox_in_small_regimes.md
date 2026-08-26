@@ -48,18 +48,15 @@ The resulting outputs are written to persistent object storage (S3/GCS) as pre-c
 
 ### Advantages
 
-* **Zero GPU Startup Latency:** Training nodes provision and begin forward/backward matrix passes immediately with zero tokenization overhead.
-* **Low Host RAM Overhead:** GPU host nodes do not require large memory pools (`/dev/shm`) for in-memory tokenization workers.
+- **Zero GPU Startup Latency:** Training nodes provision and begin forward/backward matrix passes immediately with zero tokenization overhead.
+- **Low Host RAM Overhead:** GPU host nodes do not require large memory pools (`/dev/shm`) for in-memory tokenization workers.
 
 ### Architectural Failure Modes & Bottlenecks
 
-* **Strict Architecture Lock-in:** The stored dataset is tied to a specific base model's vocabulary ($V$), chat control tokens (e.g., `<|im_start|>` vs. `<|start_header_id|>`), and context window length ($L$).
+- **Strict Architecture Lock-in:** The stored dataset is tied to a specific base model's vocabulary ($V$), chat control tokens (e.g., `<|im_start|>` vs. `<|start_header_id|>`), and context window length ($L$).
 
-
-* **Storage Footprint Hypertrophy:** Running experiments across three candidate models (e.g., `Qwen2.5-0.5B`, `Llama-3.2-1B`, and `Mistral-7B`) requires generating and storing three independent binary Gold datasets, multiplying storage costs.
-* **Upstream Re-Run Penalties:** Modifying context length (e.g., testing $L = 2048$ vs. $L = 4096$) forces a complete re-run of the upstream data pipeline, stalling continuous training iterations.
-
-
+- **Storage Footprint Hypertrophy:** Running experiments across three candidate models (e.g., `Qwen2.5-0.5B`, `Llama-3.2-1B`, and `Mistral-7B`) requires generating and storing three independent binary Gold datasets, multiplying storage costs.
+- **Upstream Re-Run Penalties:** Modifying context length (e.g., testing $L = 2048$ vs. $L = 4096$) forces a complete re-run of the upstream data pipeline, stalling continuous training iterations.
 
 ---
 
@@ -86,20 +83,16 @@ When a training job initializes (`dag_04_model_train.py`), the training containe
 
 ### Advantages
 
-* **100% Model Agnostic:** The Silver data lake serves as a permanent, universal System of Record.
+- **100% Model Agnostic:** The Silver data lake serves as a permanent, universal System of Record.
 
+- **Zero-Cost Model Swapping:** Switching base models from Qwen to Llama requires updating only the declarative YAML configuration manifest (`dag_run.conf`). The orchestrator points the generic training container to the new tokenizer, leaving the upstream data lake untouched.
 
-* **Zero-Cost Model Swapping:** Switching base models from Qwen to Llama requires updating only the declarative YAML configuration manifest (`dag_run.conf`). The orchestrator points the generic training container to the new tokenizer, leaving the upstream data lake untouched.
-
-
-* **Zero Storage Waste:** Eliminates object storage bloat by generating binary tensors strictly in volatile memory (`/dev/shm`).
-
-
+- **Zero Storage Waste:** Eliminates object storage bloat by generating binary tensors strictly in volatile memory (`/dev/shm`).
 
 ### Architectural Failure Modes & Bottlenecks
 
-* **Startup Initialization Latency:** GPU workers must wait for CPU worker threads to tokenize and pack the dataset before the first gradient step executes.
-* **Redundant Computation in Sweeps:** Running multi-epoch hyperparameter tuning sweeps (testing learning rates, weight decays, or LoRA ranks) repeatedly re-tokenizes identical text on every run.
+- **Startup Initialization Latency:** GPU workers must wait for CPU worker threads to tokenize and pack the dataset before the first gradient step executes.
+- **Redundant Computation in Sweeps:** Running multi-epoch hyperparameter tuning sweeps (testing learning rates, weight decays, or LoRA ranks) repeatedly re-tokenizes identical text on every run.
 
 ---
 
@@ -149,10 +142,10 @@ $$\text{Cache Key} = \text{SHA256}\Big(\text{Hash}(\mathcal{D}_{\text{Silver}}) 
 
 Where:
 
-* $\text{Hash}(\mathcal{D}_{\text{Silver}})$ is the 64-bit cryptographic hash of the input Silver text dataset shards.
-* $\text{Hash}(\mathcal{T}_{\text{config}})$ is the hash of the tokenizer vocabulary and merge rules (`tokenizer.json`).
-* $L$ is the target sequence packing context window (e.g., $2048$).
-* $\text{Hash}(\text{Jinja Template})$ is the hash of the template string formatting user/assistant roles.
+- $\text{Hash}(\mathcal{D}_{\text{Silver}})$ is the 64-bit cryptographic hash of the input Silver text dataset shards.
+- $\text{Hash}(\mathcal{T}_{\text{config}})$ is the hash of the tokenizer vocabulary and merge rules (`tokenizer.json`).
+- $L$ is the target sequence packing context window (e.g., $2048$).
+- $\text{Hash}(\text{Jinja Template})$ is the hash of the template string formatting user/assistant roles.
 
 ### Operational Mechanics
 
@@ -164,15 +157,15 @@ Where:
 
 ## 4. Architectural Comparison Matrix
 
-| Evaluation Dimension | Pattern A (Static Gold Storage) | Pattern B (JIT In-Memory Compilation) | Hybrid (Ephemeral Gold Tensor Cache) |
-| --- | --- | --- | --- |
-| **System of Record** | Pre-tokenized binary files (`.bin`, `.pt`) | Universal Silver text (`.parquet`, `.jsonl`) | Universal Silver text (`.parquet`, `.jsonl`) |
-| **Storage Overhead** | High ($\mathcal{O}(M \times \text{Runs})$, multiplies per model) | Minimal ($\mathcal{O}(1)$, single universal Silver store) | Low ($\mathcal{O}(1)$ persistent + bounded LRU scratch) |
-| **GPU Boot Latency** | Instant ($0\text{ sec}$ preprocessing) | Small delay ($10\text{--}60\text{ sec}$ JIT compilation in RAM) | Instant on cache hits; small delay on cold misses |
-| **Base Model Portability** | Inflexible (re-runs upstream data pipeline on model swap) | Fully decoupled (swap model via YAML manifest) | Fully decoupled (recomputes cache key automatically) |
-| **Context Length Agility** | Locked to pre-tokenized sequence length $L$ | Parameterized at container runtime ($L$ in YAML) | Parameterized at runtime; caches each distinct $L$ |
-| **Hyperparameter Sweeps** | Fast execution; high pre-storage preparation cost | Redundant CPU tokenization on every sweep iteration | Optimal (JIT on run 1, instant cache reuse on runs $2\dots N$) |
-| **Host Memory Requirement** | Standard RAM allocation | Requires high-throughput `/dev/shm` virtual RAM | Requires local NVMe scratch disk or `/dev/shm`<br> |
+| Evaluation Dimension        | Pattern A (Static Gold Storage)                                  | Pattern B (JIT In-Memory Compilation)                           | Hybrid (Ephemeral Gold Tensor Cache)                           |
+| --------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| **System of Record**        | Pre-tokenized binary files (`.bin`, `.pt`)                       | Universal Silver text (`.parquet`, `.jsonl`)                    | Universal Silver text (`.parquet`, `.jsonl`)                   |
+| **Storage Overhead**        | High ($\mathcal{O}(M \times \text{Runs})$, multiplies per model) | Minimal ($\mathcal{O}(1)$, single universal Silver store)       | Low ($\mathcal{O}(1)$ persistent + bounded LRU scratch)        |
+| **GPU Boot Latency**        | Instant ($0\text{ sec}$ preprocessing)                           | Small delay ($10\text{--}60\text{ sec}$ JIT compilation in RAM) | Instant on cache hits; small delay on cold misses              |
+| **Base Model Portability**  | Inflexible (re-runs upstream data pipeline on model swap)        | Fully decoupled (swap model via YAML manifest)                  | Fully decoupled (recomputes cache key automatically)           |
+| **Context Length Agility**  | Locked to pre-tokenized sequence length $L$                      | Parameterized at container runtime ($L$ in YAML)                | Parameterized at runtime; caches each distinct $L$             |
+| **Hyperparameter Sweeps**   | Fast execution; high pre-storage preparation cost                | Redundant CPU tokenization on every sweep iteration             | Optimal (JIT on run 1, instant cache reuse on runs $2\dots N$) |
+| **Host Memory Requirement** | Standard RAM allocation                                          | Requires high-throughput `/dev/shm` virtual RAM                 | Requires local NVMe scratch disk or `/dev/shm`<br>             |
 
 ---
 
@@ -207,25 +200,25 @@ class EphemeralTensorLoader:
         self.chat_template = chat_template
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Compute deterministic composite cache key
         self.cache_key = self._compute_cache_key()
         self.cache_file = self.cache_dir / f"{self.cache_key}.pt"
 
     def _compute_cache_key(self) -> str:
         hasher = hashlib.sha256()
-        
+
         # 1. Hash Silver Data File Metadata & Content Header
         with open(self.silver_data_path, "rb") as f:
             hasher.update(f.read(65536)) # Fast sample hash
-            
+
         # 2. Hash Tokenizer Vocabulary & Merge Signature
         hasher.update(str(self.tokenizer.get_vocab_size()).encode())
-        
+
         # 3. Hash Context Length and Template
         hasher.update(str(self.block_size).encode())
         hasher.update(self.chat_template.encode())
-        
+
         return hasher.hexdigest()[:16]
 
     def load_tensors(self) -> tuple[torch.Tensor, torch.Tensor]:

@@ -202,14 +202,13 @@ PPL
 
 ### Diagnostic Signatures of Perplexity Curves
 
-* **Healthy Convergence:** Training loss and validation loss decrease smoothly in parallel. Validation perplexity plateaus asymptotically.
-* **Overfitting Divergence:** Training PPL continues to drop (e.g., $3.0 \to 1.5$) while Validation PPL reverses direction and begins climbing ($5.2 \to 6.8$). Immediate early stopping trigger.
-* **Perplexity Spike Anomaly:** A sudden exponential jump in PPL (e.g., $8.2 \to 450.0$) indicates:
+- **Healthy Convergence:** Training loss and validation loss decrease smoothly in parallel. Validation perplexity plateaus asymptotically.
+- **Overfitting Divergence:** Training PPL continues to drop (e.g., $3.0 \to 1.5$) while Validation PPL reverses direction and begins climbing ($5.2 \to 6.8$). Immediate early stopping trigger.
+- **Perplexity Spike Anomaly:** A sudden exponential jump in PPL (e.g., $8.2 \to 450.0$) indicates:
+
 1. A corrupt or unmasked training batch containing repetitive formatting tokens.
 2. Numerical overflow in attention logits (loss scale explosion in FP16).
 3. AdamW second-moment ($v_t$) buffer corruption following an unclipped gradient update.
-
-
 
 ---
 
@@ -242,7 +241,7 @@ class MetricsEvaluationEngine:
     ) -> Dict[str, Any]:
         """
         Computes exact loss and token counts for a single forward pass.
-        
+
         Args:
             logits: Unnormalized predictions of shape (Batch, Seq_Len, Vocab_Size)
             labels: Target IDs with ignore_index of shape (Batch, Seq_Len)
@@ -265,7 +264,7 @@ class MetricsEvaluationEngine:
         # 3. Mask active evaluation tokens
         active_mask = (shift_labels != self.ignore_index)
         active_tokens_per_batch = active_mask.sum().item()
-        
+
         total_loss_nats = (loss_unreduced * active_mask.float()).sum().item()
 
         # 4. Byte count summation for BPB
@@ -293,7 +292,7 @@ class MetricsEvaluationEngine:
         Aggregates metrics using total token-weighted sums to prevent batch size bias.
         """
         model.eval()
-        
+
         cumulative_loss_nats = 0.0
         cumulative_tokens = 0
         cumulative_bytes = 0
@@ -316,7 +315,7 @@ class MetricsEvaluationEngine:
                     logits = logits[0]
 
             batch_metrics = self.evaluate_batch(logits, targets, byte_tensor)
-            
+
             cumulative_loss_nats += batch_metrics["total_loss_nats"]
             cumulative_tokens += batch_metrics["active_tokens"]
             cumulative_bytes += batch_metrics["total_bytes"]
@@ -354,10 +353,10 @@ class MetricsEvaluationEngine:
 
 ## 7. Metrics Comparison Matrix
 
-| Evaluation Metric | Mathematical Definition | Base Unit | Tokenizer Dependent? | Primary Diagnostic Role |
-| --- | --- | --- | --- | --- |
-| **Cross-Entropy ($\mathcal{L}_{\text{CE}}$)** | $-\frac{1}{N} \sum \log Q(x_t)$ | nats / token | Yes | Direct optimization objective for gradient backpropagation |
-| **Perplexity (PPL)** | $\exp(\mathcal{L}_{\text{CE}})$ | Effective choices | Yes | Intuitive tracking of model uncertainty across training checkpoints |
-| **Bits-per-Byte (BPB)** | $\frac{\mathcal{L}_{\text{total (bits)}}}{\text{Total UTF-8 Bytes}}$ | bits / byte | **No (Universal)** | Fair benchmark comparison across different models and tokenizers |
-| **Bits-per-Character (BPC)** | $\frac{\mathcal{L}_{\text{total (bits)}}}{\text{Total Characters}}$ | bits / char | **No (Universal)** | Cross-model comparison on fixed natural language corpora |
-| **Target Accuracy (Top-1)** | $\frac{1}{N} \sum \mathbb{I}(\arg\max z_t == y_t)$ | Percentage ($0\text{--}100\%$) | Yes | Tracking hard classification accuracy on next-token prediction |
+| Evaluation Metric                             | Mathematical Definition                                              | Base Unit                      | Tokenizer Dependent? | Primary Diagnostic Role                                             |
+| --------------------------------------------- | -------------------------------------------------------------------- | ------------------------------ | -------------------- | ------------------------------------------------------------------- |
+| **Cross-Entropy ($\mathcal{L}_{\text{CE}}$)** | $-\frac{1}{N} \sum \log Q(x_t)$                                      | nats / token                   | Yes                  | Direct optimization objective for gradient backpropagation          |
+| **Perplexity (PPL)**                          | $\exp(\mathcal{L}_{\text{CE}})$                                      | Effective choices              | Yes                  | Intuitive tracking of model uncertainty across training checkpoints |
+| **Bits-per-Byte (BPB)**                       | $\frac{\mathcal{L}_{\text{total (bits)}}}{\text{Total UTF-8 Bytes}}$ | bits / byte                    | **No (Universal)**   | Fair benchmark comparison across different models and tokenizers    |
+| **Bits-per-Character (BPC)**                  | $\frac{\mathcal{L}_{\text{total (bits)}}}{\text{Total Characters}}$  | bits / char                    | **No (Universal)**   | Cross-model comparison on fixed natural language corpora            |
+| **Target Accuracy (Top-1)**                   | $\frac{1}{N} \sum \mathbb{I}(\arg\max z_t == y_t)$                   | Percentage ($0\text{--}100\%$) | Yes                  | Tracking hard classification accuracy on next-token prediction      |

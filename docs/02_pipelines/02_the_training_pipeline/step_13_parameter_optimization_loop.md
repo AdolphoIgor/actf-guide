@@ -67,9 +67,9 @@ $$\theta_t = \theta_{t-1} - \eta_t \left( \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \e
 
 Where:
 
-* $\eta_t$ is the dynamically scheduled learning rate at step $t$.
-* $\epsilon$ is the numerical stability floor (typically $\epsilon = 10^{-8}$ for FP32/BF16, $\epsilon = 10^{-6}$ for FP16).
-* $\lambda$ is the decoupled weight decay coefficient (typically $\lambda \in [0.01, 0.1]$).
+- $\eta_t$ is the dynamically scheduled learning rate at step $t$.
+- $\epsilon$ is the numerical stability floor (typically $\epsilon = 10^{-8}$ for FP32/BF16, $\epsilon = 10^{-6}$ for FP16).
+- $\lambda$ is the decoupled weight decay coefficient (typically $\lambda \in [0.01, 0.1]$).
 
 ```text
 AdamW Parameter Decomposition:
@@ -211,8 +211,8 @@ Memory & Precision Storage Architecture:
 
 ### FP16 GradScaler vs. Native BFloat16
 
-* **FP16:** Limited dynamic range (5-bit exponent, max value $\approx 65,504$, min positive value $\approx 5.96 \times 10^{-8}$). Small gradient values underflow to zero without dynamic scaling via `torch.cuda.amp.GradScaler`.
-* **BFloat16:** Matches the 8-bit exponent range of FP32 (up to $\approx 3.39 \times 10^{38}$). Gradients do not underflow or overflow under normal training dynamics, eliminating the need for `GradScaler` and dynamic loss scale tracking.
+- **FP16:** Limited dynamic range (5-bit exponent, max value $\approx 65,504$, min positive value $\approx 5.96 \times 10^{-8}$). Small gradient values underflow to zero without dynamic scaling via `torch.cuda.amp.GradScaler`.
+- **BFloat16:** Matches the 8-bit exponent range of FP32 (up to $\approx 3.39 \times 10^{38}$). Gradients do not underflow or overflow under normal training dynamics, eliminating the need for `GradScaler` and dynamic loss scale tracking.
 
 ---
 
@@ -291,7 +291,7 @@ def configure_decay_parameter_groups(
     for name, param in model.named_parameters():
         if not param.requires_grad:
             continue
-        
+
         # 2D+ tensors (Linear weights, Embedding matrices) receive weight decay
         if param.dim() >= 2:
             decay_params.append(param)
@@ -388,14 +388,14 @@ class ProductionOptimizationEngine:
     ) -> Dict[str, float]:
         """
         Executes a single full optimization step across K accumulated micro-batches.
-        
+
         Args:
             micro_batches: List of (inputs, targets) tuples of length K
             is_distributed: Boolean flag indicating if DDP synchronization hooks are active
         """
         t_start = time.perf_counter()
         self.model.train()
-        
+
         # Zero gradients with memory-efficient None assignment
         self.optimizer.zero_grad(set_to_none=True)
 
@@ -406,7 +406,7 @@ class ProductionOptimizationEngine:
         for k, (inputs, targets) in enumerate(micro_batches):
             inputs = inputs.to(self.cfg.device, non_blocking=True)
             targets = targets.to(self.cfg.device, non_blocking=True)
-            
+
             is_last_micro_batch = (k == k_accum - 1)
 
             # 1. Forward Pass with Autocast
@@ -428,7 +428,7 @@ class ProductionOptimizationEngine:
                     ignore_index=self.ignore_index,
                     reduction="mean"
                 )
-                
+
                 # Normalize loss mathematically over accumulation window
                 scaled_loss = loss / k_accum
 
@@ -514,11 +514,11 @@ To guarantee that the parameter optimization loop executes without silent mathem
 
 ## 8. Optimization Failure Diagnostic Matrix
 
-| Failure Symptom | Detection Mechanism | Root Cause | Engineering Remediation |
-| --- | --- | --- | --- |
-| **Loss Explosion (NaN/Inf)** | Step loss arithmetic assertion | Unscaled gradient norm or missing attention scale $\frac{1}{\sqrt{d_k}}$ | Revert to step $t-1\text{k}$; verify QK scale; enforce max norm clip $\le 1.0$ |
-| **Silent Gradient Vanishing** | $\Vert{}g_t\Vert{}_2 < 10^{-7}$ for $\ge 5$ steps | Learning rate set too low or unscaled FP16 underflow | Switch precision to BFloat16 or verify `GradScaler` initialization |
-| **Memory Fragmentation OOM** | CUDA Out of Memory on Step 2+ | Gradients zeroed with `set_to_none=False` retaining buffers | Enforce `optimizer.zero_grad(set_to_none=True)` to deallocate buffers |
-| **Gradient Scale Explosion** | Grad norm spikes by $10\times\text{--}100\times$ | Loss was not divided by $K_{\text{accum}}$ in micro-loop | Enforce `scaled_loss = loss / k_accum` before `.backward()` |
-| **Hardware Underutilization** | GPU utilization drops to $<40\%$ | Calling `.item()` or logging inside the inner micro-batch loop | Detach metric tensors and push asynchronously to background queue |
-| **Weight Decay Corruption** | Norm scales $\gamma$ shrink toward zero | Weight decay applied to LayerNorm / RMSNorm parameters | Isolate 1D tensors into `weight_decay = 0.0` parameter group |
+| Failure Symptom               | Detection Mechanism                               | Root Cause                                                               | Engineering Remediation                                                        |
+| ----------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| **Loss Explosion (NaN/Inf)**  | Step loss arithmetic assertion                    | Unscaled gradient norm or missing attention scale $\frac{1}{\sqrt{d_k}}$ | Revert to step $t-1\text{k}$; verify QK scale; enforce max norm clip $\le 1.0$ |
+| **Silent Gradient Vanishing** | $\Vert{}g_t\Vert{}_2 < 10^{-7}$ for $\ge 5$ steps | Learning rate set too low or unscaled FP16 underflow                     | Switch precision to BFloat16 or verify `GradScaler` initialization             |
+| **Memory Fragmentation OOM**  | CUDA Out of Memory on Step 2+                     | Gradients zeroed with `set_to_none=False` retaining buffers              | Enforce `optimizer.zero_grad(set_to_none=True)` to deallocate buffers          |
+| **Gradient Scale Explosion**  | Grad norm spikes by $10\times\text{--}100\times$  | Loss was not divided by $K_{\text{accum}}$ in micro-loop                 | Enforce `scaled_loss = loss / k_accum` before `.backward()`                    |
+| **Hardware Underutilization** | GPU utilization drops to $<40\%$                  | Calling `.item()` or logging inside the inner micro-batch loop           | Detach metric tensors and push asynchronously to background queue              |
+| **Weight Decay Corruption**   | Norm scales $\gamma$ shrink toward zero           | Weight decay applied to LayerNorm / RMSNorm parameters                   | Isolate 1D tensors into `weight_decay = 0.0` parameter group                   |

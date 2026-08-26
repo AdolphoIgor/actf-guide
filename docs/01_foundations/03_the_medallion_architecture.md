@@ -6,24 +6,24 @@ In mature, enterprise-scale organizations, cloud object storage (like AWS S3 or 
 
 ## 1. The Bronze Layer: Raw landing
 
-* **What it is:** The core definition of what "Bronze" means in enterprise data engineering is a state of data fidelity. Either the Cloud-Native Data Warehouse Route (BigQuery / Snowflake) or an Object Storage Data Lake (S3 / MinIO) can hold the Bronze Layer. Usually, the raw text is extracted from RDBMS or from raw files (`.pdf`, `.doc`, etc.) via Spark and then dumped into S3/MinIO as a `.parquet` file.
-* **The Rule:** No destructive changes. You only append metadata (e.g., `ingestion_timestamp`, `source_system`). If the text in the datasource contains typos, HTML tags, or duplicated rows, it must land in Bronze with those exact flaws intact.
-* **Why?** If you change your mind later about how you want to filter your data, or if your tokenization script has a bug, you need to be able to replay the entire pipeline from scratch without querying your production Postgres database again.
+- **What it is:** The core definition of what "Bronze" means in enterprise data engineering is a state of data fidelity. Either the Cloud-Native Data Warehouse Route (BigQuery / Snowflake) or an Object Storage Data Lake (S3 / MinIO) can hold the Bronze Layer. Usually, the raw text is extracted from RDBMS or from raw files (`.pdf`, `.doc`, etc.) via Spark and then dumped into S3/MinIO as a `.parquet` file.
+- **The Rule:** No destructive changes. You only append metadata (e.g., `ingestion_timestamp`, `source_system`). If the text in the datasource contains typos, HTML tags, or duplicated rows, it must land in Bronze with those exact flaws intact.
+- **Why?** If you change your mind later about how you want to filter your data, or if your tokenization script has a bug, you need to be able to replay the entire pipeline from scratch without querying your production Postgres database again.
 
 ---
 
 ## 2. The Silver Layer: Cleaned & Structured Text (Ray Data territory)
 
-* **What it is:** The result of your text cleaning, deduplication, PII removal, and structural alignment.
-* **The Transformation:** Your pipeline reads the Bronze files, runs your processing logic (via Ray Data), and writes a new set of Parquet files back to a separate `silver/` directory in (S3 / MinIO).
-* **The State:** At this layer, the data is pristine, human-readable text perfectly formatted into your instruction-tuning schemas (e.g., `{"instruction": "...", "output": "..."}`).
+- **What it is:** The result of your text cleaning, deduplication, PII removal, and structural alignment.
+- **The Transformation:** Your pipeline reads the Bronze files, runs your processing logic (via Ray Data), and writes a new set of Parquet files back to a separate `silver/` directory in (S3 / MinIO).
+- **The State:** At this layer, the data is pristine, human-readable text perfectly formatted into your instruction-tuning schemas (e.g., `{"instruction": "...", "output": "..."}`).
 
 ---
 
 ## 3. The Gold Layer: Tokenized Tensors (Weights-Ready)
 
-* **What it is:** The tokenized integer arrays, attention masks, and packaged binary files (like Hugging Face `.arrow` cache chunks or packed tensors) that Axolotl reads directly.
-* **The Transformation:** Ray reads the clean Silver text, applies the model's exact tokenizer, applies context window padding/packing, and writes the output to the `gold/` directory.
+- **What it is:** The tokenized integer arrays, attention masks, and packaged binary files (like Hugging Face `.arrow` cache chunks or packed tensors) that Axolotl reads directly.
+- **The Transformation:** Ray reads the clean Silver text, applies the model's exact tokenizer, applies context window padding/packing, and writes the output to the `gold/` directory.
 
 ---
 
@@ -64,9 +64,9 @@ You cannot store every raw file in standard object storage forever; enterprise d
 
 ## The Tiering Policy Strategy
 
-| Data Layer | Data State | Lifecycle Action Rule | The Business Reason |
-| --- | --- | --- | --- |
-| **Bronze (Raw)** | Unoptimized Parquet tables. | Move to Deep Archive after 30 days.<br>
+| Data Layer       | Data State                  | Lifecycle Action Rule                   | The Business Reason |
+| ---------------- | --------------------------- | --------------------------------------- | ------------------- |
+| **Bronze (Raw)** | Unoptimized Parquet tables. | Move to Deep Archive after 30 days.<br> |
 
 <br>Delete after 365 days. | Once Bronze data is parsed and transformed into Silver, it is just a backup. It is rarely accessed. Storing heavy text files in hot storage wastes money. We push it to the cheapest cold tier. |
 | **Silver (Cleaned)** | Cleaned, deduplicated, schema-enforced Parquet tables. | Move to Infrequent Access (Cool) after 90 days.<br>
@@ -84,15 +84,15 @@ When you look at Bronze and (Silver/Gold) files inside an enterprise storage sys
 
 Depending on the company's chosen cloud vendor, this storage landing zone is placed in one of three standard locations:
 
-* **AWS (Amazon Web Services):** An Amazon S3 Bucket (e.g., `s3://enterprise-data-lake/bronze/documents_raw/`).
-* **GCP (Google Cloud Platform):** A Google Cloud Storage (GCS) Bucket (e.g., `gs://enterprise-data-lake/bronze/documents_raw/`).
-* **Azure:** An Azure Data Lake Storage (ADLS) Gen2 Account.
+- **AWS (Amazon Web Services):** An Amazon S3 Bucket (e.g., `s3://enterprise-data-lake/bronze/documents_raw/`).
+- **GCP (Google Cloud Platform):** A Google Cloud Storage (GCS) Bucket (e.g., `gs://enterprise-data-lake/bronze/documents_raw/`).
+- **Azure:** An Azure Data Lake Storage (ADLS) Gen2 Account.
 
 ---
 
 ## Why is MinIO a Great Alternative?
 
-* **The S3 API Standard:** MinIO offers full API parity with the AWS S3 API. This means you can often migrate your applications with zero code changes.
-* **Multi-Cloud/Hybrid Flexibility:** It can be run on-premises (bare metal, VMs), in private clouds, or within public clouds (AWS, GCP, Azure) to eliminate vendor lock-in and centralize your storage framework.
-* **Zero Egress Fees:** By hosting MinIO on your own hardware, you eliminate the data transfer and request costs that mount up when pulling data out of public cloud object stores.
-* **High Performance:** MinIO is specifically optimized for throughput-heavy applications, making it a favorite for modern analytics, databases, and AI/ML data lakes.
+- **The S3 API Standard:** MinIO offers full API parity with the AWS S3 API. This means you can often migrate your applications with zero code changes.
+- **Multi-Cloud/Hybrid Flexibility:** It can be run on-premises (bare metal, VMs), in private clouds, or within public clouds (AWS, GCP, Azure) to eliminate vendor lock-in and centralize your storage framework.
+- **Zero Egress Fees:** By hosting MinIO on your own hardware, you eliminate the data transfer and request costs that mount up when pulling data out of public cloud object stores.
+- **High Performance:** MinIO is specifically optimized for throughput-heavy applications, making it a favorite for modern analytics, databases, and AI/ML data lakes.

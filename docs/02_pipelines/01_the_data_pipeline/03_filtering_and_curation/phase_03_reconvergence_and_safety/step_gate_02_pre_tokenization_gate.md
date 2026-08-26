@@ -52,41 +52,34 @@ Gate 2 executes a three-tiered vectorized audit across the candidate Silver data
 
 ### 1. Character Encoding & Non-Null Audit
 
-* **Strict UTF-8 Conformance:** Performs vectorized byte scanning to verify all string buffers represent valid UTF-8. It asserts the complete absence of:
-* Null byte terminators (`\x00`).
-* Unpaired surrogate codepoints (`\uD800` through `\uDFFF`).
-* Non-standard bidirectional override control characters (which can alter prompt parsing order).
+- **Strict UTF-8 Conformance:** Performs vectorized byte scanning to verify all string buffers represent valid UTF-8. It asserts the complete absence of:
+- Null byte terminators (`\x00`).
+- Unpaired surrogate codepoints (`\uD800` through `\uDFFF`).
+- Non-standard bidirectional override control characters (which can alter prompt parsing order).
 
-
-* **Non-Null Field Validation:** Evaluates boolean masks across critical schema columns:
+- **Non-Null Field Validation:** Evaluates boolean masks across critical schema columns:
 
 $$\text{NullCount}(\text{role}) == 0 \quad \land \quad \text{NullCount}(\text{content}) == 0$$
 
-
-
 ### 2. Dialogue & Conversation Structure Integrity
 
-* **Turn Alternation & Structure Contract:** Validates that conversational payloads adhere to standard multi-turn formatting:
-* Dialogue arrays must contain at least one valid `user` turn and at least one valid `assistant` turn.
-* The final message in each conversation sequence must be an `assistant` completion turn.
+- **Turn Alternation & Structure Contract:** Validates that conversational payloads adhere to standard multi-turn formatting:
+- Dialogue arrays must contain at least one valid `user` turn and at least one valid `assistant` turn.
+- The final message in each conversation sequence must be an `assistant` completion turn.
 
-
-* **Non-Empty Content Constraint:** Asserts that every individual turn contains non-whitespace string content:
+- **Non-Empty Content Constraint:** Asserts that every individual turn contains non-whitespace string content:
 
 $$\forall m \in \text{messages}: \text{length}(\text{trim}(m.\text{content})) \ge L_{\text{min\_chars}}$$
 
-
-
 ### 3. Context Length Distribution & Boundary Clamping
 
-* **Character-to-Token Ratio Boundaries:** Evaluates the character volume $L_{\text{char}}$ per record to ensure it fits within the model's target context envelope:
+- **Character-to-Token Ratio Boundaries:** Evaluates the character volume $L_{\text{char}}$ per record to ensure it fits within the model's target context envelope:
 
 $$L_{\text{char\_min}} \le L_{\text{char}}(\text{document}) \le \alpha \times L_{\text{max\_tokens}}$$
 
+_(Where $\alpha \approx 4.0$ represents the empirical upper character-to-token ratio for English prose and code)._
 
-
-*(Where $\alpha \approx 4.0$ represents the empirical upper character-to-token ratio for English prose and code).*
-* **Anomaly Boundary Checks:** Drops records that fall below $30\text{ characters}$ (insufficient context) or exceed the model's hard maximum context limits prior to sequence concatenation.
+- **Anomaly Boundary Checks:** Drops records that fall below $30\text{ characters}$ (insufficient context) or exceed the model's hard maximum context limits prior to sequence concatenation.
 
 ---
 
@@ -98,22 +91,22 @@ $$\text{Pass}_{\text{Gate 2}} \iff \left( \mathcal{E}_{\text{utf8}}(\mathcal{S})
 
 Where:
 
-* $\mathcal{E}_{\text{utf8}}(\mathcal{S})$ represents complete UTF-8 byte validity and control character sanitation.
-* $\mathcal{N}_{\text{null}}(\mathcal{S})$ represents zero null values across all required schema fields.
-* $\mathcal{T}_{\text{turns}}(\mathcal{S})$ represents valid conversational structure and non-empty assistant turns.
-* $\mathcal{L}_{\text{bounds}}(\mathcal{S})$ represents context length boundary and character-ratio compliance.
+- $\mathcal{E}_{\text{utf8}}(\mathcal{S})$ represents complete UTF-8 byte validity and control character sanitation.
+- $\mathcal{N}_{\text{null}}(\mathcal{S})$ represents zero null values across all required schema fields.
+- $\mathcal{T}_{\text{turns}}(\mathcal{S})$ represents valid conversational structure and non-empty assistant turns.
+- $\mathcal{L}_{\text{bounds}}(\mathcal{S})$ represents context length boundary and character-ratio compliance.
 
 ---
 
 ## 5. Inspection Matrix: Gating Checks & Failure Modes
 
-| Inspection Target | Verification Engine / Kernel | Gating Assertion Criteria | Failure Mode Trapped | Circuit Breaker Action |
-| --- | --- | --- | --- | --- |
-| **Byte Encoding** | PyArrow C++ UTF-8 Validator | Zero invalid byte sequences / No `\x00` | Rust tokenizer panic; deserialization crashes | **Abort:** Halts DAG before tokenization workers boot. |
-| **Field Completeness** | Vectorized Null-Mask Array | $\text{NullCount} == 0$ on all core columns | Downstream pipeline type errors & broken schemas | **Abort:** Quarantines shard; logs invalid record IDs. |
-| **Turn Structure** | PyArrow List / Map Validator | Valid `user` $\rightarrow$ `assistant` turn schema | Missing prompt/target pairs; training format skew | **Filter / Abort:** Drops invalid rows; halts if error rate $> 0.1\%$. |
-| **Assistant Turn Length** | Vectorized String Length Kernel | $\text{length}(m_{\text{assistant}}) \ge 5\text{ chars}$ | Empty label tensors resulting in $\text{NaN}$ loss | **Filter:** Prunes broken conversation; keeps shard if valid. |
-| **Context Length** | Document Character Counter | $L_{\text{char}} \in [L_{\text{min}}, 4 \times L_{\text{max}}]$ | Sequence packing overflow & memory allocation spikes | **Filter:** Routes extreme outliers to long-context bucket. |
+| Inspection Target         | Verification Engine / Kernel    | Gating Assertion Criteria                                       | Failure Mode Trapped                                 | Circuit Breaker Action                                                 |
+| ------------------------- | ------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Byte Encoding**         | PyArrow C++ UTF-8 Validator     | Zero invalid byte sequences / No `\x00`                         | Rust tokenizer panic; deserialization crashes        | **Abort:** Halts DAG before tokenization workers boot.                 |
+| **Field Completeness**    | Vectorized Null-Mask Array      | $\text{NullCount} == 0$ on all core columns                     | Downstream pipeline type errors & broken schemas     | **Abort:** Quarantines shard; logs invalid record IDs.                 |
+| **Turn Structure**        | PyArrow List / Map Validator    | Valid `user` $\rightarrow$ `assistant` turn schema              | Missing prompt/target pairs; training format skew    | **Filter / Abort:** Drops invalid rows; halts if error rate $> 0.1\%$. |
+| **Assistant Turn Length** | Vectorized String Length Kernel | $\text{length}(m_{\text{assistant}}) \ge 5\text{ chars}$        | Empty label tensors resulting in $\text{NaN}$ loss   | **Filter:** Prunes broken conversation; keeps shard if valid.          |
+| **Context Length**        | Document Character Counter      | $L_{\text{char}} \in [L_{\text{min}}, 4 \times L_{\text{max}}]$ | Sequence packing overflow & memory allocation spikes | **Filter:** Routes extreme outliers to long-context bucket.            |
 
 ---
 
@@ -123,11 +116,11 @@ If any shard fails Gate 2 assertions beyond defined error thresholds ($\tau_{\te
 
 1. **Pipeline Execution Interception:** The orchestration engine halts execution before allocating tokenization nodes or sequence-packing memory buffers.
 2. **Silver Partition Quarantine:** The problematic Silver Parquet shard is isolated from the main data lake:
+
 ```text
 s3://company-ai-datalake/silver/_quarantine/year=2026/month=08/error_id=schema_encoding_breach/
 
 ```
 
-
-3. **Traceback Payload Dispatch:** An automated error manifest is compiled detailing the exact byte offsets, document IDs, and invalid characters, dispatching an immediate alert to the data curation team.
-4. **Tokenization Lockout:** Downstream training jobs are blocked from pulling the unverified Silver partition, preventing corrupted data from entering shared virtual memory (`/dev/shm`).
+1. **Traceback Payload Dispatch:** An automated error manifest is compiled detailing the exact byte offsets, document IDs, and invalid characters, dispatching an immediate alert to the data curation team.
+2. **Tokenization Lockout:** Downstream training jobs are blocked from pulling the unverified Silver partition, preventing corrupted data from entering shared virtual memory (`/dev/shm`).

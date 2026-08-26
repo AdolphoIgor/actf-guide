@@ -59,18 +59,14 @@ Step 7a converts the abstract concept of "text quality" into a calibrated binary
 
 $$f_{\theta}(x) = P(\text{HQ} \mid x) \in [0.0, 1.0]$$
 
-
-
 ### Stage 2: Multi-Tier Execution Architecture
 
 Depending on throughput constraints and compute allocation, Step 7a executes via two distinct architectural profiles:
 
-* **Type A: High-Speed Lexical Profiling (FastText):** Trains an optimized linear classifier over dense token $n$-gram character spaces. Operates on CPU architectures at high MB/s throughput per core, making it ideal for high-volume initial pruning.
-* **Type B: Dense Semantic Embedding Profiling (Transformer + Classifier):** Uses a high-efficiency sentence embedding transformer model (e.g., BGE, Arctic) to map text blocks into a dense latent vector space $\mathbf{z} = E(x)$, running a classification layer $g(\mathbf{z})$ on top:
+- **Type A: High-Speed Lexical Profiling (FastText):** Trains an optimized linear classifier over dense token $n$-gram character spaces. Operates on CPU architectures at high MB/s throughput per core, making it ideal for high-volume initial pruning.
+- **Type B: Dense Semantic Embedding Profiling (Transformer + Classifier):** Uses a high-efficiency sentence embedding transformer model (e.g., BGE, Arctic) to map text blocks into a dense latent vector space $\mathbf{z} = E(x)$, running a classification layer $g(\mathbf{z})$ on top:
 
 $$P(\text{HQ} \mid x) = \sigma\left( \mathbf{w}^T \mathbf{z} + b \right)$$
-
-
 
 This captures deep semantic nuance and conceptual density but requires GPU acceleration.
 
@@ -81,24 +77,23 @@ This captures deep semantic nuance and conceptual density but requires GPU accel
 
 $$\text{Retention Condition}: S_i \ge 0.65$$
 
-
-3. **Metadata Schema Extension:** Rather than discarding the computed score, the pipeline appends $S_i$ directly to the data batch schema as a 64-bit float metadata array column (`cqf_quality_score`). This metadata is persisted alongside dataset manifests, allowing engineering teams to audit quality distribution drift or dynamically modify filtering cutoffs in future continuous training iterations without re-executing inference.
+1. **Metadata Schema Extension:** Rather than discarding the computed score, the pipeline appends $S_i$ directly to the data batch schema as a 64-bit float metadata array column (`cqf_quality_score`). This metadata is persisted alongside dataset manifests, allowing engineering teams to audit quality distribution drift or dynamically modify filtering cutoffs in future continuous training iterations without re-executing inference.
 
 ---
 
 ## 4. Classifier Quality Filtering Execution Matrix
 
-| Classification Profile | Architectural Model | Compute Target | Primary Advantage | Operational Pipeline Role |
-| --- | --- | --- | --- | --- |
-| **Type A: Lexical CQF** | Linear Model over Word/Character $n$-grams (FastText) | Multi-Core CPU Pods | Extremely high throughput; zero GPU cost; fast execution over massive web dumps. | Primary high-volume semantic filter for general web crawls. |
-| **Type B: Dense Semantic CQF** | Sentence Transformer + Linear Classification Layer | GPU Inference Clusters | Captures conceptual nuance, stylistic tone, and dense domain authority. | Precision filtering for high-value domain datasets and fine-tuning corpora. |
-| **Metadata Persistence** | Schema Extension (`cqf_quality_score`) | Persistent Storage Manifest | Enables offline threshold tuning without re-running classification models. | Immutable score logging alongside dataset partitions. |
+| Classification Profile         | Architectural Model                                   | Compute Target              | Primary Advantage                                                                | Operational Pipeline Role                                                   |
+| ------------------------------ | ----------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Type A: Lexical CQF**        | Linear Model over Word/Character $n$-grams (FastText) | Multi-Core CPU Pods         | Extremely high throughput; zero GPU cost; fast execution over massive web dumps. | Primary high-volume semantic filter for general web crawls.                 |
+| **Type B: Dense Semantic CQF** | Sentence Transformer + Linear Classification Layer    | GPU Inference Clusters      | Captures conceptual nuance, stylistic tone, and dense domain authority.          | Precision filtering for high-value domain datasets and fine-tuning corpora. |
+| **Metadata Persistence**       | Schema Extension (`cqf_quality_score`)                | Persistent Storage Manifest | Enables offline threshold tuning without re-running classification models.       | Immutable score logging alongside dataset partitions.                       |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Supervised Linear Classification Frameworks:** $n$-gram classification models optimized for rapid feature evaluation over raw character arrays.
-* **Dense Latent Embedding Transformers:** Lightweight sentence-transformer models engineered to map variable-length prose into dense vector representations.
-* **Logistic Regression / Classification Layers:** Calibrated output heads capable of transforming latent vectors into smooth probability distributions $P(\text{HQ} \mid x) \in [0.0, 1.0]$.
-* **Schema Extension Engines:** Columnar array manipulation utilities that append persistent metadata arrays directly to binary table headers.
+- **Supervised Linear Classification Frameworks:** $n$-gram classification models optimized for rapid feature evaluation over raw character arrays.
+- **Dense Latent Embedding Transformers:** Lightweight sentence-transformer models engineered to map variable-length prose into dense vector representations.
+- **Logistic Regression / Classification Layers:** Calibrated output heads capable of transforming latent vectors into smooth probability distributions $P(\text{HQ} \mid x) \in [0.0, 1.0]$.
+- **Schema Extension Engines:** Columnar array manipulation utilities that append persistent metadata arrays directly to binary table headers.

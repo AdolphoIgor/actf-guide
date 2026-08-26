@@ -79,28 +79,28 @@ $$\eta_t = \eta_{\min}$$
 
 Where:
 
-* $\eta_{\max}$ is the peak learning rate (e.g., $3 \times 10^{-4}$).
-* $\eta_{\min}$ is the minimum learning rate floor (conventionally set to $0.1 \times \eta_{\max}$ or $0$).
-* $T_{\text{warmup}}$ is the duration of the linear warmup phase.
-* $T_{\text{max}}$ is the total number of scheduled training steps.
+- $\eta_{\max}$ is the peak learning rate (e.g., $3 \times 10^{-4}$).
+- $\eta_{\min}$ is the minimum learning rate floor (conventionally set to $0.1 \times \eta_{\max}$ or $0$).
+- $T_{\text{warmup}}$ is the duration of the linear warmup phase.
+- $T_{\text{max}}$ is the total number of scheduled training steps.
 
 ### The Minimum Learning Rate Floor ($\eta_{\min}$)
 
 Rather than decaying learning rate completely to zero ($\eta_{\min} = 0$), production recipes set $\eta_{\min} = 0.1 \times \eta_{\max}$ (a 10% floor).
 
-* Decaying to absolute zero halts parameter movement entirely, preventing the model from continuing to learn from final data shards.
-* Maintaining a 10% floor ensures ongoing gradient mobility, allowing weight decay to continue regularizing weights while fine-tuning final layer representations.
+- Decaying to absolute zero halts parameter movement entirely, preventing the model from continuing to learn from final data shards.
+- Maintaining a 10% floor ensures ongoing gradient mobility, allowing weight decay to continue regularizing weights while fine-tuning final layer representations.
 
 ---
 
 ## 4. Schedule Comparison Matrix
 
-| Schedule Type | Mathematical Curve | Peak Stability | Extensibility / Continuous Training | Convergence Speed | Primary Use Case |
-| --- | --- | --- | --- | --- | --- |
-| **Cosine Annealing with Warmup** | Smooth harmonic decay | High | Poor (Requires knowing $T_{\max}$ upfront) | Optimal | Standard fixed-budget pre-training & SFT |
-| **Linear Decay with Warmup** | Piecewise linear descent | Moderate | Poor (Tied to fixed $T_{\max}$) | Fast | Quick fine-tuning sweeps, BERT-style tasks |
-| **Inverse Square Root** | $\eta_t \propto 1 / \sqrt{t}$ | High | High (Decays indefinitely without target $T_{\max}$) | Moderate | Seq2Seq translation (T5, original Transformer) |
-| **Warmup-Stable-Decay (WSD)** | Trapezoidal (Flat plateau + rapid decay) | High | **Optimal (Can extend training arbitrarily)** | Fast during decay | Modern Continuous Training (CT) and dynamic LLM runs |
+| Schedule Type                    | Mathematical Curve                       | Peak Stability | Extensibility / Continuous Training                  | Convergence Speed | Primary Use Case                                     |
+| -------------------------------- | ---------------------------------------- | -------------- | ---------------------------------------------------- | ----------------- | ---------------------------------------------------- |
+| **Cosine Annealing with Warmup** | Smooth harmonic decay                    | High           | Poor (Requires knowing $T_{\max}$ upfront)           | Optimal           | Standard fixed-budget pre-training & SFT             |
+| **Linear Decay with Warmup**     | Piecewise linear descent                 | Moderate       | Poor (Tied to fixed $T_{\max}$)                      | Fast              | Quick fine-tuning sweeps, BERT-style tasks           |
+| **Inverse Square Root**          | $\eta_t \propto 1 / \sqrt{t}$            | High           | High (Decays indefinitely without target $T_{\max}$) | Moderate          | Seq2Seq translation (T5, original Transformer)       |
+| **Warmup-Stable-Decay (WSD)**    | Trapezoidal (Flat plateau + rapid decay) | High           | **Optimal (Can extend training arbitrarily)**        | Fast during decay | Modern Continuous Training (CT) and dynamic LLM runs |
 
 ---
 
@@ -130,7 +130,7 @@ def get_cosine_schedule_with_warmup(
         # 1. Linear Warmup Phase
         if current_step < num_warmup_steps:
             return float(current_step) / float(max(1, num_warmup_steps))
-        
+
         # 2. Beyond scheduled training horizon -> hold at min_lr_ratio
         if current_step > num_training_steps:
             return min_lr_ratio
@@ -140,7 +140,7 @@ def get_cosine_schedule_with_warmup(
             max(1, num_training_steps - num_warmup_steps)
         )
         cosine_decay = 0.5 * (1.0 + math.cos(math.pi * progress))
-        
+
         # Scale between min_lr_ratio and 1.0
         return min_lr_ratio + (1.0 - min_lr_ratio) * cosine_decay
 
@@ -163,7 +163,7 @@ class CosineWarmupLREngine:
         self.min_lr = min_lr
         self.warmup_steps = warmup_steps
         self.total_steps = total_steps
-        
+
         min_lr_ratio = min_lr / max_lr
         self.scheduler = get_cosine_schedule_with_warmup(
             optimizer=self.optimizer,
@@ -229,9 +229,9 @@ Empirical studies (e.g., MiniCPM, Llama-3 technical insights) demonstrate that m
 
 ## 7. Hyperparameter Calibration Guidelines
 
-| Regime / Task Scale | Warmup Duration ($T_{\text{warmup}}$) | Peak Learning Rate ($\eta_{\max}$) | Min Learning Rate ($\eta_{\min}$) | Decay Duration |
-| --- | --- | --- | --- | --- |
-| **Micro-Models ($\Phi \le 10\text{M}$)** | $100\text{--}500\text{ steps}$ | $5 \times 10^{-4} \text{ to } 1 \times 10^{-3}$ | $0.1 \times \eta_{\max}$ | Full run balance |
-| **Small Baseline ($\Phi \approx 500\text{M}$)** | $1,000\text{--}2,000\text{ steps}$ | $3 \times 10^{-4} \text{ to } 6 \times 10^{-4}$ | $0.1 \times \eta_{\max}$ | Full run balance |
-| **Enterprise SFT ($\Phi \approx 7\text{B}$)** | $100\text{--}500\text{ steps}$ ($3\%\text{--}5\%$) | $1 \times 10^{-5} \text{ to } 5 \times 10^{-5}$ | $0.1 \times \eta_{\max}$ | Over total epochs |
-| **Continuous Training (WSD)** | $2,000\text{ steps}$ | $3 \times 10^{-4}$ | $0.05 \times \eta_{\max}$ | Final $10\%\text{--}15\%$ of run |
+| Regime / Task Scale                             | Warmup Duration ($T_{\text{warmup}}$)              | Peak Learning Rate ($\eta_{\max}$)              | Min Learning Rate ($\eta_{\min}$) | Decay Duration                   |
+| ----------------------------------------------- | -------------------------------------------------- | ----------------------------------------------- | --------------------------------- | -------------------------------- |
+| **Micro-Models ($\Phi \le 10\text{M}$)**        | $100\text{--}500\text{ steps}$                     | $5 \times 10^{-4} \text{ to } 1 \times 10^{-3}$ | $0.1 \times \eta_{\max}$          | Full run balance                 |
+| **Small Baseline ($\Phi \approx 500\text{M}$)** | $1,000\text{--}2,000\text{ steps}$                 | $3 \times 10^{-4} \text{ to } 6 \times 10^{-4}$ | $0.1 \times \eta_{\max}$          | Full run balance                 |
+| **Enterprise SFT ($\Phi \approx 7\text{B}$)**   | $100\text{--}500\text{ steps}$ ($3\%\text{--}5\%$) | $1 \times 10^{-5} \text{ to } 5 \times 10^{-5}$ | $0.1 \times \eta_{\max}$          | Over total epochs                |
+| **Continuous Training (WSD)**                   | $2,000\text{ steps}$                               | $3 \times 10^{-4}$                              | $0.05 \times \eta_{\max}$         | Final $10\%\text{--}15\%$ of run |

@@ -46,8 +46,8 @@ Actions on Failure:
 
 Conflating these two objectives causes operational failure:
 
-* **Promoting `latest` to production:** Exposes users to overfitted, degraded models that trained past optimal generalization.
-* **Resuming optimization from `best`:** Resets the training step backward in time, causing data duplication, learning rate schedule discontinuities, and corrupted momentum dynamics.
+- **Promoting `latest` to production:** Exposes users to overfitted, degraded models that trained past optimal generalization.
+- **Resuming optimization from `best`:** Resets the training step backward in time, causing data duplication, learning rate schedule discontinuities, and corrupted momentum dynamics.
 
 ---
 
@@ -163,7 +163,7 @@ The lineage manifest tracks parent-child relationships, training durations, metr
     {
       "step": 45000,
       "epoch": 2,
-      "val_loss": 1.8210,
+      "val_loss": 1.821,
       "parent_checkpoint_hash": "a1b2c3d4e5f6",
       "artifact_path": "ckpt_step_00045000_loss_1.8210.pt",
       "timestamp": "2026-08-23T01:00:00Z"
@@ -186,7 +186,6 @@ The lineage manifest tracks parent-child relationships, training durations, metr
     }
   ]
 }
-
 ```
 
 ---
@@ -222,7 +221,7 @@ class DualTrackCheckpointEngine:
     ):
         self.dir = Path(checkpoint_dir).resolve()
         self.dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.max_latest = max_latest_to_keep
         self.max_best = max_best_to_keep
         self.manifest_path = self.dir / "lineage.json"
@@ -322,9 +321,9 @@ class DualTrackCheckpointEngine:
             self.manifest["best_step"] = step
             self.manifest["active_best_pointer"] = filename
             self.manifest["best_snapshots"].append({"step": step, "loss": val_loss, "path": filename})
-            
+
             self._update_symlink(filename, "best.pt")
-            
+
             # Export stripped inference-only model artifact
             inference_path = self.dir / "best_model_inference.pt"
             torch.save(
@@ -438,9 +437,9 @@ Before triggering downstream pipeline stages, the orchestrator applies hard asse
 
 ```
 
-| Operation Target | Primary File Source | State Requirement | Downstream Destination |
-| --- | --- | --- | --- |
-| **Crash / Preemption Recovery** | `latest.pt` | Full state (Model, Moments, Sched, RNG) | Training Loop continuation |
-| **Gate 5 Offline Audit** | `best.pt` | Model parameters + Tokenizer + Metadata | Gate 5 Verification Runner |
-| **Production Serving Fleet** | `best_model_inference.pt` | Weights-only (Inference optimized) | Model Registry / vLLM Cluster |
-| **Governance & Lineage Audit** | `lineage.json` | Hash chain + Training BOM metadata | Central Compliance Archive |
+| Operation Target                | Primary File Source       | State Requirement                       | Downstream Destination        |
+| ------------------------------- | ------------------------- | --------------------------------------- | ----------------------------- |
+| **Crash / Preemption Recovery** | `latest.pt`               | Full state (Model, Moments, Sched, RNG) | Training Loop continuation    |
+| **Gate 5 Offline Audit**        | `best.pt`                 | Model parameters + Tokenizer + Metadata | Gate 5 Verification Runner    |
+| **Production Serving Fleet**    | `best_model_inference.pt` | Weights-only (Inference optimized)      | Model Registry / vLLM Cluster |
+| **Governance & Lineage Audit**  | `lineage.json`            | Hash chain + Training BOM metadata      | Central Compliance Archive    |

@@ -92,11 +92,11 @@ Ephemeral Staging & Offload Workflow:
 
   Main Training Process (Producer)               Background Worker Daemon (Consumer)
   ────────────────────────────────               ───────────────────────────────────
-  1. Complete Optimizer Step t                   
-  2. Write to: `/scratch/ckpt_t.tmp`             
-  3. Flush OS buffer via `os.fsync()`            
-  4. Atomic Rename:                              
-     `ckpt_t.tmp` ──► `ckpt_t.pt`                
+  1. Complete Optimizer Step t
+  2. Write to: `/scratch/ckpt_t.tmp`
+  3. Flush OS buffer via `os.fsync()`
+  4. Atomic Rename:
+     `ckpt_t.tmp` ──► `ckpt_t.pt`
   5. Enqueue Job: `UploadTask(step=t)` ────────► 1. Dequeue `UploadTask(step=t)`
   6. Resume Step t+1 on GPU immediately          2. Generate Stripped `inference.safetensors`
      (GPU is 100% unblocked)                     3. Compute Streaming SHA-256 Checksums
@@ -181,7 +181,7 @@ class EphemeralStagingExporter:
         self.scratch_dir.mkdir(parents=True, exist_ok=True)
         self.remote_base_uri = remote_base_uri
         self.max_local_snapshots = max_local_snapshots
-        
+
         # Mockable remote upload function (e.g., boto3, gcs, or rsync)
         self.remote_upload_fn = remote_upload_fn or self._default_mock_upload
 
@@ -219,7 +219,7 @@ class EphemeralStagingExporter:
 
         final_ckpt_path = self.scratch_dir / ckpt_filename
         temp_ckpt_path = self.scratch_dir / f"{ckpt_filename}.tmp"
-        
+
         final_inf_path = self.scratch_dir / inf_filename
         temp_inf_path = self.scratch_dir / f"{inf_filename}.tmp"
 
@@ -325,7 +325,7 @@ class EphemeralStagingExporter:
         """
         while len(self.completed_snapshots) > self.max_local_snapshots:
             step_to_prune = self.completed_snapshots.pop(0)
-            
+
             # Formulate filenames
             ckpt_file = self.scratch_dir / f"recovery_step_{step_to_prune:07d}.pt"
             inf_file = self.scratch_dir / f"inference_step_{step_to_prune:07d}.pt"
@@ -361,10 +361,10 @@ class EphemeralStagingExporter:
 
 ## 6. Staging Contract Invariants & Verification Matrix
 
-| Verification Dimension | Invariant Condition | Enforcement Point | Action on Failure |
-| --- | --- | --- | --- |
-| **Atomic File Visibility** | Target file visible only after full `os.fsync` | Local NVMe Write | Write to `.tmp`; atomically swap via `os.replace` |
-| **Active Upload Safety** | Never delete file where `step in active_uploads` | Scratch Garbage Collector | Retain local file until background worker emits completion |
-| **Integrity Digest** | `SHA256(local) == SHA256(remote)` | Offload Consumer | Re-queue multipart upload on checksum mismatch |
-| **Local Disk Headroom** | Local NVMe scratch usage $\le 90\%$ | Training Step Producer | Pause step execution until background offload frees disk space |
-| **Inference Separation** | Inference artifact size $\le 40\%$ of full state | Staging Exporter | Strip AdamW moments $m_t, v_t$ from inference bundle |
+| Verification Dimension     | Invariant Condition                              | Enforcement Point         | Action on Failure                                              |
+| -------------------------- | ------------------------------------------------ | ------------------------- | -------------------------------------------------------------- |
+| **Atomic File Visibility** | Target file visible only after full `os.fsync`   | Local NVMe Write          | Write to `.tmp`; atomically swap via `os.replace`              |
+| **Active Upload Safety**   | Never delete file where `step in active_uploads` | Scratch Garbage Collector | Retain local file until background worker emits completion     |
+| **Integrity Digest**       | `SHA256(local) == SHA256(remote)`                | Offload Consumer          | Re-queue multipart upload on checksum mismatch                 |
+| **Local Disk Headroom**    | Local NVMe scratch usage $\le 90\%$              | Training Step Producer    | Pause step execution until background offload frees disk space |
+| **Inference Separation**   | Inference artifact size $\le 40\%$ of full state | Staging Exporter          | Strip AdamW moments $m_t, v_t$ from inference bundle           |

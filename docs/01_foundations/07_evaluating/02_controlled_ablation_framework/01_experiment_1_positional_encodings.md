@@ -26,12 +26,11 @@ Positional Encoding Paradigms:
 
 1. **In-Distribution Convergence ($L \le L_{\text{train}}$):** All positional strategies (Learned APE, Sinusoidal, RoPE, and ALiBi) achieve comparable validation loss when evaluated strictly within the context window seen during training ($L_{\text{train}} = 1024$).
 2. **Out-of-Distribution Length Extrapolation ($L > L_{\text{train}}$):**
-* **Learned Absolute Embeddings (APE)** fail immediately beyond $L_{\text{train}}$ due to uninitialized positional weights at indices $t > 1024$.
-* **Sinusoidal Embeddings** degrade sharply because the feed-forward network has never observed high-frequency phases outside the training radius.
-* **ALiBi (Attention with Linear Biases)** extrapolates without parameter modifications due to its monotonic linear distance penalty.
-* **RoPE (Rotary Position Embeddings)** exhibits catastrophic perplexity explosion unless modified with post-hoc frequency scaling (e.g., Linear Interpolation, NTK-Aware Scaling, or YaRN).
 
-
+- **Learned Absolute Embeddings (APE)** fail immediately beyond $L_{\text{train}}$ due to uninitialized positional weights at indices $t > 1024$.
+- **Sinusoidal Embeddings** degrade sharply because the feed-forward network has never observed high-frequency phases outside the training radius.
+- **ALiBi (Attention with Linear Biases)** extrapolates without parameter modifications due to its monotonic linear distance penalty.
+- **RoPE (Rotary Position Embeddings)** exhibits catastrophic perplexity explosion unless modified with post-hoc frequency scaling (e.g., Linear Interpolation, NTK-Aware Scaling, or YaRN).
 
 ---
 
@@ -62,7 +61,7 @@ A trainable matrix $W_p \in \mathbb{R}^{L_{\max} \times d_{\text{model}}}$ is in
 
 $$h_t^{(0)} = x_t W_{\text{emb}} + W_p[t]$$
 
-* **Inherent Limitation:** Context length is bounded by $L_{\max}$. Forward passes with sequence length $L > L_{\max}$ raise index bounds errors.
+- **Inherent Limitation:** Context length is bounded by $L_{\max}$. Forward passes with sequence length $L > L_{\max}$ raise index bounds errors.
 
 ### B. Rotary Position Embeddings (RoPE)
 
@@ -142,13 +141,13 @@ Perplexity (PPL)
 
 ### Quantitative Performance Matrix
 
-| Positional Topology | In-Domain PPL ($L=1\text{k}$) | 2x Extrapolation ($L=2\text{k}$) | 4x Extrapolation ($L=4\text{k}$) | 8x Extrapolation ($L=8\text{k}$) | Passkey Acc ($L=4\text{k}$) |
-| --- | --- | --- | --- | --- | --- |
-| **Learned Absolute (APE)** | $10.82$ | $\infty$ (Index Error) | $\infty$ (Index Error) | $\infty$ (Index Error) | $0.0\%$ |
-| **Fixed Sinusoidal** | $10.85$ | $18.40$ | $44.21$ | $112.50$ | $12.5\%$ |
-| **ALiBi** | $10.94$ | **$11.85$** | **$13.40$** | **$15.42$** | **$92.0\%$** |
-| **RoPE (Unscaled Base)** | **$10.74$** | $14.20$ | $28.62$ | $86.10$ | $45.0\%$ |
-| **RoPE (YaRN Interpolated)** | $10.78$ | **$10.89$** | **$11.05$** | **$11.24$** | **$99.0\%$** |
+| Positional Topology          | In-Domain PPL ($L=1\text{k}$) | 2x Extrapolation ($L=2\text{k}$) | 4x Extrapolation ($L=4\text{k}$) | 8x Extrapolation ($L=8\text{k}$) | Passkey Acc ($L=4\text{k}$) |
+| ---------------------------- | ----------------------------- | -------------------------------- | -------------------------------- | -------------------------------- | --------------------------- |
+| **Learned Absolute (APE)**   | $10.82$                       | $\infty$ (Index Error)           | $\infty$ (Index Error)           | $\infty$ (Index Error)           | $0.0\%$                     |
+| **Fixed Sinusoidal**         | $10.85$                       | $18.40$                          | $44.21$                          | $112.50$                         | $12.5\%$                    |
+| **ALiBi**                    | $10.94$                       | **$11.85$**                      | **$13.40$**                      | **$15.42$**                      | **$92.0\%$**                |
+| **RoPE (Unscaled Base)**     | **$10.74$**                   | $14.20$                          | $28.62$                          | $86.10$                          | $45.0\%$                    |
+| **RoPE (YaRN Interpolated)** | $10.78$                       | **$10.89$**                      | **$11.05$**                      | **$11.24$**                      | **$99.0\%$**                |
 
 ---
 
@@ -181,7 +180,7 @@ class SinusoidalEmbedding(nn.Module):
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
-        
+
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         self.register_buffer("pe", pe.unsqueeze(0), persistent=False)
@@ -197,7 +196,7 @@ class RotaryEmbedding(nn.Module):
         self.dim = dim
         inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
         self.register_buffer("inv_freq", inv_freq, persistent=False)
-        
+
         # Precompute cos/sin cache
         t = torch.arange(max_len, dtype=torch.float)
         freqs = torch.outer(t, self.inv_freq)
@@ -215,7 +214,7 @@ class RotaryEmbedding(nn.Module):
         seq_len = q.shape[2]
         cos = self.cos_cached[:seq_len, :].unsqueeze(0).unsqueeze(1)
         sin = self.sin_cached[:seq_len, :].unsqueeze(0).unsqueeze(1)
-        
+
         q_rot = (q * cos) + (self._rotate_half(q) * sin)
         k_rot = (k * cos) + (self._rotate_half(k) * sin)
         return q_rot, k_rot
@@ -228,7 +227,7 @@ def build_alibi_bias(n_head: int, seq_len: int, device: torch.device) -> torch.T
             start = 2 ** (-(2 ** -(math.log2(n_p2) - 3)))
             ratio = start
             return [start * (ratio ** i) for i in range(n_p2)]
-        
+
         if math.log2(n).is_integer():
             return get_slopes_power_of_2(n)
         closest_p2 = 2 ** math.floor(math.log2(n))
@@ -243,7 +242,7 @@ def build_alibi_bias(n_head: int, seq_len: int, device: torch.device) -> torch.T
     distance_matrix = range_vec[None, :] - range_vec[:, None]
     # Retain strictly causal relative distance
     distance_matrix = distance_matrix.unsqueeze(0).unsqueeze(0)
-    
+
     alibi_bias = distance_matrix * slopes[:, None, None]
     return alibi_bias
 
@@ -349,5 +348,5 @@ class PositionalBenchmarkAttention(nn.Module):
 
 ```
 
-* **Default Production Recommendation:** Standardize on **RoPE** initialized with base frequency $b = 500,000$. When extending context beyond training limits, apply **YaRN (Yet another RoPE extensioN)** frequency interpolation to avoid retraining from scratch.
-* **Streamed Real-Time Processing:** Standardize on **ALiBi** if serving unbounded streaming dialogues where sequence lengths vary unpredictably and zero-shot extrapolation is required without runtime interpolation overhead.
+- **Default Production Recommendation:** Standardize on **RoPE** initialized with base frequency $b = 500,000$. When extending context beyond training limits, apply **YaRN (Yet another RoPE extensioN)** frequency interpolation to avoid retraining from scratch.
+- **Streamed Real-Time Processing:** Standardize on **ALiBi** if serving unbounded streaming dialogues where sequence lengths vary unpredictably and zero-shot extrapolation is required without runtime interpolation overhead.

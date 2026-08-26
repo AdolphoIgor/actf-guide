@@ -4,9 +4,9 @@ The goal of this layer is to ingest raw records (such as Parquet files from your
 
 ## How It Works Under the Hood
 
-* **Lazy Loading:** When you call `ray.data.read_parquet()`, Ray does not read your actual text into memory yet. It simply scans the storage metadata (schema, file layout, and total file paths) to generate an execution plan.
-* **Block Partitioning:** Ray splits the target files into logical, streamable units called Partitions (or Blocks), aiming for an in-memory size of roughly 100 MB to 512 MB per block.
-* **The Object Store:** As the pipeline is actively executed by Airflow, Ray worker processes read these Parquet blocks from MinIO, deserialize them from their on-disk formats into memory-optimized Apache Arrow tables, and place them into Ray's distributed shared-memory object store (Plasma). This allows multiple workers on the same machine to access the raw text blocks directly without wasting time duplicating memory.
+- **Lazy Loading:** When you call `ray.data.read_parquet()`, Ray does not read your actual text into memory yet. It simply scans the storage metadata (schema, file layout, and total file paths) to generate an execution plan.
+- **Block Partitioning:** Ray splits the target files into logical, streamable units called Partitions (or Blocks), aiming for an in-memory size of roughly 100 MB to 512 MB per block.
+- **The Object Store:** As the pipeline is actively executed by Airflow, Ray worker processes read these Parquet blocks from MinIO, deserialize them from their on-disk formats into memory-optimized Apache Arrow tables, and place them into Ray's distributed shared-memory object store (Plasma). This allows multiple workers on the same machine to access the raw text blocks directly without wasting time duplicating memory.
 
 ---
 
@@ -24,8 +24,8 @@ When Apache Airflow triggers your data ingestion script, Ray splits the work int
 
 When you invoke `ray.data.read_parquet("s3://minio/bronze/")`, the Ray Driver process initiates a metadata handshake with MinIO.
 
-* **What happens:** Ray does not read the string data. It downloads only the Parquet file footers and schema definitions.
-* **The Mechanics:** Parquet footers contain structural metadata—byte offsets, column statistics, row group counts, and dictionary encodings. Ray reads this metadata to calculate exactly how many rows exist and how large the data will be once expanded into raw memory. It uses this to pre-calculate an execution graph of streamable chunks before spinning up a single heavy worker task.
+- **What happens:** Ray does not read the string data. It downloads only the Parquet file footers and schema definitions.
+- **The Mechanics:** Parquet footers contain structural metadata—byte offsets, column statistics, row group counts, and dictionary encodings. Ray reads this metadata to calculate exactly how many rows exist and how large the data will be once expanded into raw memory. It uses this to pre-calculate an execution graph of streamable chunks before spinning up a single heavy worker task.
 
 #### Phase B: The Streaming Execution (Materialization)
 
@@ -39,12 +39,10 @@ To manage this safely, Ray Data utilizes a target-driven block sizing strategy c
 
 **How Ray Determines Block Sizes:**
 
-* **The Target Limit:** By default, Ray tries to size output blocks to roughly 128 MB of in-memory data.
-* **File Bundling vs. Splitting:**
-* **Bundling:** If your Spark pipeline wrote thousands of tiny 5 MB Parquet files to MinIO, Ray's metadata planner will automatically bundle multiple file references into a single read task to avoid creating downstream processing overhead.
-* **Splitting:** If Spark wrote massive 2 GB Parquet files, Ray uses the Parquet footer metadata to read the file in smaller, isolated Row Groups, splitting a single physical file on disk into multiple independent memory blocks.
-
-
+- **The Target Limit:** By default, Ray tries to size output blocks to roughly 128 MB of in-memory data.
+- **File Bundling vs. Splitting:**
+- **Bundling:** If your Spark pipeline wrote thousands of tiny 5 MB Parquet files to MinIO, Ray's metadata planner will automatically bundle multiple file references into a single read task to avoid creating downstream processing overhead.
+- **Splitting:** If Spark wrote massive 2 GB Parquet files, Ray uses the Parquet footer metadata to read the file in smaller, isolated Row Groups, splitting a single physical file on disk into multiple independent memory blocks.
 
 ### 3. The Shared-Memory Object Store (Plasma)
 
@@ -52,9 +50,9 @@ Once a worker node pulls a block from MinIO, it does not hand it over as a stand
 
 **The Under-the-Hood Mechanics:**
 
-* **Apache Arrow Serialization:** Ray deserializes the raw bytes from MinIO straight into an Apache Arrow columnar format inside memory. Arrow stores strings in contiguous, highly compact byte arrays rather than wrapping each text line in heavy Python string pointers.
-* **Shared-Memory Allocations (`/dev/shm`):** The data block is committed directly to a shared-memory segment on the operating system.
-* **Zero-Copy Deserialization:** Because the block lives in a shared space, your cleaning scripts, tokenizers, and verification functions can read the exact same memory blocks simultaneously. Multiple worker processes read the data via memory mapping without copying the raw strings between themselves. This reduces your system memory overhead to near-zero during the ingestion step.
+- **Apache Arrow Serialization:** Ray deserializes the raw bytes from MinIO straight into an Apache Arrow columnar format inside memory. Arrow stores strings in contiguous, highly compact byte arrays rather than wrapping each text line in heavy Python string pointers.
+- **Shared-Memory Allocations (`/dev/shm`):** The data block is committed directly to a shared-memory segment on the operating system.
+- **Zero-Copy Deserialization:** Because the block lives in a shared space, your cleaning scripts, tokenizers, and verification functions can read the exact same memory blocks simultaneously. Multiple worker processes read the data via memory mapping without copying the raw strings between themselves. This reduces your system memory overhead to near-zero during the ingestion step.
 
 ---
 
@@ -71,17 +69,17 @@ Apache Arrow solves this by storing strings in a completely flat, contiguous phy
 If you have an Arrow string array containing `["Hey", None, "Robot"]`, Arrow allocates three physical memory blocks side-by-side:
 
 1. **The Validity Bitmap Buffer:** A sequence of bits indicating if a slot is null or valid.
-* For 3 items, it allocates a byte where bits are flipped: `1` (Valid), `0` (Null), `1` (Valid) $\rightarrow$ `10100000`.
 
+- For 3 items, it allocates a byte where bits are flipped: `1` (Valid), `0` (Null), `1` (Valid) $\rightarrow$ `10100000`.
 
-2. **The Offsets Buffer (Int32 or Int64):** A contiguous array of integers that tell the CPU exactly where each string begins and ends inside the actual data block.
-* For our data, the offsets would be: `[0, 3, 3, 8]`.
-* String 0 length: $3 - 0 = 3$ bytes.
-* String 1 (Null) length: $3 - 3 = 0$ bytes.
-* String 2 length: $8 - 3 = 5$ bytes.
+1. **The Offsets Buffer (Int32 or Int64):** A contiguous array of integers that tell the CPU exactly where each string begins and ends inside the actual data block.
 
+- For our data, the offsets would be: `[0, 3, 3, 8]`.
+- String 0 length: $3 - 0 = 3$ bytes.
+- String 1 (Null) length: $3 - 3 = 0$ bytes.
+- String 2 length: $8 - 3 = 5$ bytes.
 
-3. **The Value / Data Buffer:** A single, unbroken block of bytes containing the raw characters concatenated directly together: `HeyRobot`.
+1. **The Value / Data Buffer:** A single, unbroken block of bytes containing the raw characters concatenated directly together: `HeyRobot`.
 
 **Why this is blazingly fast:**
 When a CPU reads this data, it can stream the entire raw byte block straight into its L1/L2 hardware cache in a single clock cycle. It doesn't follow memory pointers; it simply jumps to `Offsets[i]` to read the text instantly.
@@ -94,7 +92,7 @@ In a multi-process environment (like your Ray cluster or a system running multip
 
 Apache Arrow eliminates this completely through the OS Shared Memory Segment using "Zero-Copy" architecture.
 
-### The Step-by-Step Kernel Mechanics:
+### The Step-by-Step Kernel Mechanics
 
 1. **Allocation via POSIX (`shm_open`):** When Ray Data initializes its internal object store (Plasma), it asks the Linux/Unix kernel to allocate a specific chunk of virtual memory dedicated to shared files, typically mounted under `/dev/shm` (Shared Memory).
 2. **Writing the Arrow Payload:** Process A (the ingestion task) receives data and writes the Arrow 3-Buffer layout (Bitmap, Offsets, Data) directly into this `/dev/shm` virtual memory region.
@@ -115,8 +113,8 @@ When an application like Ray writes an Apache Arrow table into `/dev/shm`, it is
 
 Because `/dev/shm` uses the OS virtual memory capabilities, it is completely backed by Swap space.
 
-* **The Safe Overflow:** If your Option B pipeline loads an exceptionally massive raw dataset that exceeds your physical RAM capacity, the Linux kernel will not crash the machine. Instead, its virtual memory paging algorithm will gracefully (but slowly) evict the oldest, least-frequently-used chunks of `/dev/shm` data out of physical RAM and write them to your Swap partition/file on your SSD.
-* **The Performance Trade-off:** While your pipeline stays alive, you lose the "Zero-Copy" speed advantage. Reading data from an SSD swap file is orders of magnitude slower than reading straight from electrical RAM registers. This is why properly sizing your data blocks during Ingestion (Step 1) is so critical.
+- **The Safe Overflow:** If your Option B pipeline loads an exceptionally massive raw dataset that exceeds your physical RAM capacity, the Linux kernel will not crash the machine. Instead, its virtual memory paging algorithm will gracefully (but slowly) evict the oldest, least-frequently-used chunks of `/dev/shm` data out of physical RAM and write them to your Swap partition/file on your SSD.
+- **The Performance Trade-off:** While your pipeline stays alive, you lose the "Zero-Copy" speed advantage. Reading data from an SSD swap file is orders of magnitude slower than reading straight from electrical RAM registers. This is why properly sizing your data blocks during Ingestion (Step 1) is so critical.
 
 ---
 
@@ -148,15 +146,15 @@ When you read a `.parquet` file into your Ray Data pipeline, it uses Apache Arro
 
 With `.jsonl`, every single line is an independent ASCII/UTF-8 string.
 
-* **The CPU Parsing Tax:** The CPU cannot simply memory-map raw JSON text into structured registers. A worker core must sequentially read the bytes of each line, find the string delimiters, instantiate a text parser (like Python's `json.loads` or a fast C-based parser like `simdjson`), and translate those raw characters into a structured object.
-* **The Memory Expansion Explosion:** JSON text strings are heavily packed. When parsed into a mutable in-memory object (like a Python dictionary), the memory footprint expands significantly. A 512 MB compressed JSONL file can easily explode into 1.5 GB to 2 GB of raw heap memory during the parsing phase alone, immediately threatening your 1.5 GB process allocation threshold.
+- **The CPU Parsing Tax:** The CPU cannot simply memory-map raw JSON text into structured registers. A worker core must sequentially read the bytes of each line, find the string delimiters, instantiate a text parser (like Python's `json.loads` or a fast C-based parser like `simdjson`), and translate those raw characters into a structured object.
+- **The Memory Expansion Explosion:** JSON text strings are heavily packed. When parsed into a mutable in-memory object (like a Python dictionary), the memory footprint expands significantly. A 512 MB compressed JSONL file can easily explode into 1.5 GB to 2 GB of raw heap memory during the parsing phase alone, immediately threatening your 1.5 GB process allocation threshold.
 
 ## 2. Row-Based Scanning vs. Projective Column Filtering
 
 In our exact deduplication design, we only want to hash the specific target column (e.g., `raw_text`).
 
-* **The Parquet Way:** Parquet’s metadata allows the pipeline to perform column projection. Ray Data skips reading the metadata columns or author signatures completely; it extracts only the binary pages of the `raw_text` column from disk.
-* **The JSONL Way:** JSONL is strictly row-oriented. To extract the value of the `"text"` key, the process must scan and parse every single byte of the row from left to right. If your JSONL file contains heavy metadata schemas nested alongside the text, your worker cores waste massive cycles deserializing data that will be immediately thrown away.
+- **The Parquet Way:** Parquet’s metadata allows the pipeline to perform column projection. Ray Data skips reading the metadata columns or author signatures completely; it extracts only the binary pages of the `raw_text` column from disk.
+- **The JSONL Way:** JSONL is strictly row-oriented. To extract the value of the `"text"` key, the process must scan and parse every single byte of the row from left to right. If your JSONL file contains heavy metadata schemas nested alongside the text, your worker cores waste massive cycles deserializing data that will be immediately thrown away.
 
 ## 3. A Fix for Those Who Really Need to Use JSONL: Streaming Arrow-JSON Ingestion
 
@@ -166,9 +164,9 @@ Inside your Ray Data ingestion setup, you utilize `ray.data.read_json()` backed 
 
 By configuring PyArrow's native C++ reader to ingest the JSONL files in strict 50 MB raw text increments:
 
-* The C++ layer parses the text rows and immediately projects them into a structured, columnar Apache Arrow Table format.
-* It drops the metadata columns instantly before they can contaminate the process heap.
-* It bundles the remaining text rows into your uniform 512 MB shared memory block inside `/dev/shm`.
+- The C++ layer parses the text rows and immediately projects them into a structured, columnar Apache Arrow Table format.
+- It drops the metadata columns instantly before they can contaminate the process heap.
+- It bundles the remaining text rows into your uniform 512 MB shared memory block inside `/dev/shm`.
 
 ---
 

@@ -58,8 +58,8 @@ In **Phase 1 - Shared Ingestion**, Step 4 evaluates incoming data batches throug
 
 When a data batch completes exact deduplication, the execution wrapper inspects the key-value metadata dictionary embedded directly within the schema header:
 
-* **Explicit Technical Whitelist:** Documents carrying verified technical provenance tags (e.g., `source_type: github_repo`, `compliance_track: financial_audit_pdfs`, `doc_type: latex_research`, or `source_type: stack_overflow`) bypass standard prose heuristics entirely and are routed directly to **Track B (Code & Technical Domains)** in **Phase 2**.
-* **Standard Web Corpora:** Documents tagged as general web crawls (e.g., `source_type: common_crawl` or `source_type: web_crawl`) are routed to Tier 2 for snippet disambiguation.
+- **Explicit Technical Whitelist:** Documents carrying verified technical provenance tags (e.g., `source_type: github_repo`, `compliance_track: financial_audit_pdfs`, `doc_type: latex_research`, or `source_type: stack_overflow`) bypass standard prose heuristics entirely and are routed directly to **Track B (Code & Technical Domains)** in **Phase 2**.
+- **Standard Web Corpora:** Documents tagged as general web crawls (e.g., `source_type: common_crawl` or `source_type: web_crawl`) are routed to Tier 2 for snippet disambiguation.
 
 ### Tier 2: Vectorized Snippet Disambiguation (For Un-tagged Web Data)
 
@@ -69,29 +69,27 @@ Web-scraped documents and technical manuals routinely embed inline raw source co
 
 $$\text{Symbol Density} = \frac{\sum \text{Count}(\{\,,\, \}\,,\, ;\,,\, [\,,\, ]\,,\, =\,,\, \rightarrow\,,\, <\,,\, >)}{\text{Total Character Length}}$$
 
+1. **Micro-Classification Pass:** If $\text{Symbol Density} \ge 0.15$, the document is passed to a lightweight, microsecond code classification model:
 
-2. **Micro-Classification Pass:** If $\text{Symbol Density} \ge 0.15$, the document is passed to a lightweight, microsecond code classification model:
-* **Result = Raw Garbage / OCR Error:** Routed to **Track A (Natural Language Prose)** to be flagged and pruned by macro-linguistic heuristics in **Step 5a**.
-* **Result = Valid Source Code Snippet:** Routed to **Track B (Code & Technical Domains)** to be isolated, parsed, and preserved in **Step 5b**.
-
-
+- **Result = Raw Garbage / OCR Error:** Routed to **Track A (Natural Language Prose)** to be flagged and pruned by macro-linguistic heuristics in **Step 5a**.
+- **Result = Valid Source Code Snippet:** Routed to **Track B (Code & Technical Domains)** to be isolated, parsed, and preserved in **Step 5b**.
 
 ---
 
 ## 4. Metadata Routing Protocol Matrix
 
-| Incoming Data Attribute | Primary Metadata Tag | Tier 2 Snippet Condition | Pipeline Target Track | Downstream Action in Phase 2 |
-| --- | --- | --- | --- | --- |
-| **Common Crawl Web Page** | `source_type: web_crawl` | Symbol density $< 0.15$ | **Track A (Prose)** | Enforces full macro-linguistic heuristic filters (**Step 5a**). |
-| **Garbage OCR / System Log Dump** | `source_type: web_crawl` | Symbol density $\ge 0.15$, Classifier = `noise` | **Track A (Prose)** | Flagged and dropped by punctuation and symbol thresholds (**Step 5a**). |
-| **Web Manual with Embedded Code** | `source_type: web_crawl` | Symbol density $\ge 0.15$, Classifier = `code` | **Track B (Technical)** | Bypasses prose heuristics; code snippets isolated via regex engines (**Step 5b**). |
-| **GitHub Repository** | `source_type: github_repo` | Bypassed (Metadata Match) | **Track B (Technical)** | Bypasses prose heuristics; evaluated by AST and Lexer parsers (**Step 7b**). |
-| **Financial PDF / Balance Sheet** | `doc_type: financial_pdf` | Bypassed (Metadata Match) | **Track B (Technical)** | Bypasses prose heuristics; preserved for specialized numeric and tabular processing. |
+| Incoming Data Attribute           | Primary Metadata Tag       | Tier 2 Snippet Condition                        | Pipeline Target Track   | Downstream Action in Phase 2                                                         |
+| --------------------------------- | -------------------------- | ----------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| **Common Crawl Web Page**         | `source_type: web_crawl`   | Symbol density $< 0.15$                         | **Track A (Prose)**     | Enforces full macro-linguistic heuristic filters (**Step 5a**).                      |
+| **Garbage OCR / System Log Dump** | `source_type: web_crawl`   | Symbol density $\ge 0.15$, Classifier = `noise` | **Track A (Prose)**     | Flagged and dropped by punctuation and symbol thresholds (**Step 5a**).              |
+| **Web Manual with Embedded Code** | `source_type: web_crawl`   | Symbol density $\ge 0.15$, Classifier = `code`  | **Track B (Technical)** | Bypasses prose heuristics; code snippets isolated via regex engines (**Step 5b**).   |
+| **GitHub Repository**             | `source_type: github_repo` | Bypassed (Metadata Match)                       | **Track B (Technical)** | Bypasses prose heuristics; evaluated by AST and Lexer parsers (**Step 7b**).         |
+| **Financial PDF / Balance Sheet** | `doc_type: financial_pdf`  | Bypassed (Metadata Match)                       | **Track B (Technical)** | Bypasses prose heuristics; preserved for specialized numeric and tabular processing. |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Schema Metadata Inspection APIs:** Low-level metadata extraction tools designed to read embedded key-value dictionaries directly from binary array headers.
-* **Vectorized Character Counting Kernels:** High-performance C++ compute utilities capable of evaluating character occurrences across contiguous memory arrays without object instantiation.
-* **Microsecond Classification Engines:** Compiled, lightweight text classification models optimized for ultra-fast language and code detection.
+- **Schema Metadata Inspection APIs:** Low-level metadata extraction tools designed to read embedded key-value dictionaries directly from binary array headers.
+- **Vectorized Character Counting Kernels:** High-performance C++ compute utilities capable of evaluating character occurrences across contiguous memory arrays without object instantiation.
+- **Microsecond Classification Engines:** Compiled, lightweight text classification models optimized for ultra-fast language and code detection.

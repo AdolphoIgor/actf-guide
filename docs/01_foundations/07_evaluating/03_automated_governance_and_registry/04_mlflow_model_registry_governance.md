@@ -186,7 +186,7 @@ class MLflowGovernanceManager:
     def __init__(self, tracking_uri: str, registry_model_name: str):
         self.tracking_uri = tracking_uri
         self.model_name = registry_model_name
-        
+
         # Configure MLflow client
         mlflow.set_tracking_uri(self.tracking_uri)
         self.client = MlflowClient(tracking_uri=self.tracking_uri)
@@ -313,10 +313,10 @@ class MLflowGovernanceManager:
 
 ## 6. Enterprise Governance and Audit Matrix
 
-| Governance Dimension | Enforcement Mechanism | Failure Action | Audit Output |
-| --- | --- | --- | --- |
-| **Model Signature** | `TensorSpec` schema verification | Reject registration (422 error) | MLflow model schema validation log |
-| **Provenance Lineage** | Required Git SHA & Dataset Merkle tags | Block transition to `@staged` | Cryptographic metadata envelope |
-| **Safety & Invariants** | Gate 5 Zero-Tolerance assertions | Move version to `@quarantined` | Quarantine Failure Receipt |
-| **Non-Inferiority** | McNemar $p < 0.05$ regression test | Block promotion to `@champion` | Paired statistical audit table |
-| **Production Cutover** | Atomic alias swapping | Instant rollback to prior `@champion` | Signed deployment audit log |
+| Governance Dimension    | Enforcement Mechanism                  | Failure Action                        | Audit Output                       |
+| ----------------------- | -------------------------------------- | ------------------------------------- | ---------------------------------- |
+| **Model Signature**     | `TensorSpec` schema verification       | Reject registration (422 error)       | MLflow model schema validation log |
+| **Provenance Lineage**  | Required Git SHA & Dataset Merkle tags | Block transition to `@staged`         | Cryptographic metadata envelope    |
+| **Safety & Invariants** | Gate 5 Zero-Tolerance assertions       | Move version to `@quarantined`        | Quarantine Failure Receipt         |
+| **Non-Inferiority**     | McNemar $p < 0.05$ regression test     | Block promotion to `@champion`        | Paired statistical audit table     |
+| **Production Cutover**  | Atomic alias swapping                  | Instant rollback to prior `@champion` | Signed deployment audit log        |

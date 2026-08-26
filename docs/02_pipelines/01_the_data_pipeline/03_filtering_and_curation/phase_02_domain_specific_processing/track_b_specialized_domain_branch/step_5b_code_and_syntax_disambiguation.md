@@ -57,12 +57,11 @@ To evaluate millions of records without deserialization bottlenecks, the pipelin
 
 $$\text{Symbol Density} = \frac{\sum \text{Count}(\{\,,\, \}\,,\, ;\,,\, [\,,\, ]\,,\, =\,,\, \rightarrow\,,\, <\,,\, >)}{\text{Total Character Length}}$$
 
-* **Code Validation Bounds:** Valid source code maintains a predictable structural symbol density across languages:
+- **Code Validation Bounds:** Valid source code maintains a predictable structural symbol density across languages:
 
 $$0.05 \le \text{Symbol Density} \le 0.25$$
 
-
-* **Noise Rejection Bounds:** Text blocks with an abnormally low symbol density ($\text{Symbol Density} < 0.01$ inside a technical file) are flagged as un-parsed prose headers, while blocks with extreme symbol density ($\text{Symbol Density} > 0.50$) are flagged as minified binaries or memory dumps and purged.
+- **Noise Rejection Bounds:** Text blocks with an abnormally low symbol density ($\text{Symbol Density} < 0.01$ inside a technical file) are flagged as un-parsed prose headers, while blocks with extreme symbol density ($\text{Symbol Density} > 0.50$) are flagged as minified binaries or memory dumps and purged.
 
 ### Stage 2: Code Snippet Extraction & Syntax Classification
 
@@ -75,26 +74,26 @@ Technical documentation and Q&A platforms mix natural language prose with embedd
 
 Source code semantics rely heavily on structural layout and block scope:
 
-1. **Indentation Ratio:** Calculates the frequency of leading whitespace and tab characters (`\t`, `    `) relative to the total line count to ensure block hierarchy is intact.
+1. **Indentation Ratio:** Calculates the frequency of leading whitespace and tab characters (`\t`, ``) relative to the total line count to ensure block hierarchy is intact.
 2. **Line-Length Uniformity:** Analyzes line-length variance. Minified JavaScript files exhibit near-zero line variance with extreme single-line lengths ($> 2,000$ characters). Conversely, corrupted OCR outputs exhibit erratic line-length variance with broken syntax tokens. Both edge cases are flagged and removed via a zero-copy Boolean mask array.
 
 ---
 
 ## 4. Code & Syntax Disambiguation Matrix
 
-| Ingested Content Type | Structural Signature | Theoretical Engine | Pipeline Action | Downstream Impact in Phase 2 |
-| --- | --- | --- | --- | --- |
-| **Valid Source Code File** | Balanced braces (`{}`), consistent indentation, valid syntax keywords (`import`, `public class`, `def`). | Vectorized C++ Kernel + $N$-Gram Syntax Classifier | **Retained:** Passed to Step 6b. | Preserved for line-level deduplication and AST validation. |
-| **Technical Manual with Code Fences** | Prose containing embedded `<pre><code>` or Markdown fences. | Compiled Regex Engine + Array Slicing | **Extracted:** Code blocks isolated; prose routed to Track A. | Prevents prose filters from corrupting embedded code. |
-| **Minified JS / Compressed Asset** | Single-line length $> 2,000$ chars, symbol density $> 0.45$. | Line-Length Variance Profiler | **Pruned:** Flagged as noise and dropped. | Prevents tokenizer sequence window corruption. |
-| **Compiler Stack Trace / Error Log** | High density of memory addresses (`0x7fff...`), repeating keys (`FATAL`, `NullPointer`). | Compiled Regex State Machine | **Pruned:** Dropped. | Prevents model contamination with error states. |
-| **Corrupted OCR Code Output** | Unbalanced structural braces, broken keyword tokens (`p-ubl-ic v-oi-d`). | Syntax Classifier + Lexer Check | **Pruned:** Fails confidence threshold ($< 0.70$). | Purges un-parseable code syntax. |
+| Ingested Content Type                 | Structural Signature                                                                                     | Theoretical Engine                                 | Pipeline Action                                               | Downstream Impact in Phase 2                               |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Valid Source Code File**            | Balanced braces (`{}`), consistent indentation, valid syntax keywords (`import`, `public class`, `def`). | Vectorized C++ Kernel + $N$-Gram Syntax Classifier | **Retained:** Passed to Step 6b.                              | Preserved for line-level deduplication and AST validation. |
+| **Technical Manual with Code Fences** | Prose containing embedded `<pre><code>` or Markdown fences.                                              | Compiled Regex Engine + Array Slicing              | **Extracted:** Code blocks isolated; prose routed to Track A. | Prevents prose filters from corrupting embedded code.      |
+| **Minified JS / Compressed Asset**    | Single-line length $> 2,000$ chars, symbol density $> 0.45$.                                             | Line-Length Variance Profiler                      | **Pruned:** Flagged as noise and dropped.                     | Prevents tokenizer sequence window corruption.             |
+| **Compiler Stack Trace / Error Log**  | High density of memory addresses (`0x7fff...`), repeating keys (`FATAL`, `NullPointer`).                 | Compiled Regex State Machine                       | **Pruned:** Dropped.                                          | Prevents model contamination with error states.            |
+| **Corrupted OCR Code Output**         | Unbalanced structural braces, broken keyword tokens (`p-ubl-ic v-oi-d`).                                 | Syntax Classifier + Lexer Check                    | **Pruned:** Fails confidence threshold ($< 0.70$).            | Purges un-parseable code syntax.                           |
 
 ---
 
 ## 5. Algorithmic Principles & Theoretical Tooling
 
-* **Vectorized Character Compute Kernels:** High-performance C++ compute utilities configured to measure structural syntax character occurrences over contiguous memory arrays.
-* **$N$-Gram Syntax Classifiers:** Multi-class classification models trained on character $n$-gram distributions for microsecond programming language identification.
-* **Compiled Regex State Machines:** High-throughput regular expression engines optimized for extracting code fences and identifying memory address patterns.
-* **Layout & Indentation Profilers:** Algorithmic line-parsing utilities that compute line-length variance and leading whitespace ratios to detect minified or OCR-corrupted assets.
+- **Vectorized Character Compute Kernels:** High-performance C++ compute utilities configured to measure structural syntax character occurrences over contiguous memory arrays.
+- **$N$-Gram Syntax Classifiers:** Multi-class classification models trained on character $n$-gram distributions for microsecond programming language identification.
+- **Compiled Regex State Machines:** High-throughput regular expression engines optimized for extracting code fences and identifying memory address patterns.
+- **Layout & Indentation Profilers:** Algorithmic line-parsing utilities that compute line-length variance and leading whitespace ratios to detect minified or OCR-corrupted assets.

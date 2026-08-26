@@ -190,14 +190,14 @@ To avoid CUDA synchronization stalls, metric tensors are detached, cloned to pin
 ```text
 Main Training Process (GPU Rank 0)                Background Telemetry Thread
 ──────────────────────────────────                ───────────────────────────
-1. Compute Forward & Loss                         
-2. Scalar Loss = loss.detach()                    
-3. Non-blocking Host Copy:                        
-   metric_event = {                               
-     "step": step,                                
-     "loss": loss_tensor,                         
-     "grad_norm": norm_tensor                     
-   }                                              
+1. Compute Forward & Loss
+2. Scalar Loss = loss.detach()
+3. Non-blocking Host Copy:
+   metric_event = {
+     "step": step,
+     "loss": loss_tensor,
+     "grad_norm": norm_tensor
+   }
 4. Metric_Queue.put_nowait(metric_event) ──────► 1. metric_event = Metric_Queue.get()
 5. Continue immediately to Step t+1               2. Convert tensors to CPU floats
    (Zero CUDA synchronization latency!)           3. Update EWMA Statistics
@@ -265,7 +265,7 @@ class AutomatedCircuitBreaker:
         self.base_max_grad_norm = base_max_grad_norm
         self.max_time_multiplier = max_step_time_multiplier
         self.min_active_ratio = min_active_token_ratio
-        
+
         self.state = BreakerState.CLOSED
         self.loss_history = deque(maxlen=history_window)
         self.step_time_history = deque(maxlen=history_window)
@@ -328,7 +328,7 @@ class AutomatedCircuitBreaker:
         # Update historical ring buffers
         self.loss_history.append(event.loss)
         self.step_time_history.append(event.step_duration_sec)
-        
+
         return self.state, None
 
     def _trip(self, reason: str):
@@ -352,7 +352,7 @@ class TelemetryDispatcher:
         self.stop_signal = threading.Event()
         self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
         self.worker_thread.start()
-        
+
         self.latest_state = BreakerState.CLOSED
         self.latest_reason: Optional[str] = None
 
@@ -470,11 +470,11 @@ def run_monitored_training_step(
 
 ## 7. Production Circuit Breaker Threshold Matrix
 
-| Monitored Channel | Normal Operating Envelope | Warning Horizon (Log Alert) | Trip Condition (Hard Halt) | Automated Remediation Action |
-| --- | --- | --- | --- | --- |
-| **Arithmetic Loss Integrity** | $\mathcal{L}_t \in [0.5, 12.0]$ | $\Delta \mathcal{L} > +1.0$ in 1 step | `isnan(L)` or `isinf(L)` | Roll back to checkpoint $t-1\text{k}$; reduce learning rate by $50\%$ |
-| **Loss Spike Z-Score** | $\vert{}Z_t\vert{} \le 2.0$ | $2.5 \le Z_t < 4.0$ | $Z_t \ge 4.0$ over 100-step window | Abort current batch; discard dataset shard; revert 1 step |
-| **Global Gradient Norm** | $\Vert{}g_t\Vert{}_2 \in [0.1, 1.5]$ | $2.0 \le \Vert{}g_t\Vert{}_2 < 10.0$ | $\Vert{}g_t\Vert{}_2 \ge 25.0$ | Discard optimizer update; zero gradients; decay LR |
-| **Gradient Starvation** | $\Vert{}g_t\Vert{}_2 \ge 0.01$ | $\Vert{}g_t\Vert{}_2 < 10^{-4}$ for 3 steps | $\Vert{}g_t\Vert{}_2 < 10^{-7}$ for 10 steps | Re-initialize uncalibrated linear heads; check activation scales |
-| **Target Loss Masking** | Active $\% \in [20\%, 60\%]$ | Active $\% < 10\%$ | Active $\%=0\%$ (Zero targets) | Quarantine incoming SFT batch; verify collator delimiter masks |
-| **Cluster Node Latency** | $\Delta t_{\text{step}} \le 1.2 \times \mu_{\text{time}}$ | $1.5\times \le \Delta t_{\text{step}} < 3.0\times$ | $\Delta t_{\text{step}} \ge 3.0 \times \mu_{\text{time}}$ or $>600\text{s}$ | Terminate job; cordon high-latency GPU node; restart on standby |
+| Monitored Channel             | Normal Operating Envelope                                 | Warning Horizon (Log Alert)                        | Trip Condition (Hard Halt)                                                  | Automated Remediation Action                                          |
+| ----------------------------- | --------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **Arithmetic Loss Integrity** | $\mathcal{L}_t \in [0.5, 12.0]$                           | $\Delta \mathcal{L} > +1.0$ in 1 step              | `isnan(L)` or `isinf(L)`                                                    | Roll back to checkpoint $t-1\text{k}$; reduce learning rate by $50\%$ |
+| **Loss Spike Z-Score**        | $\vert{}Z_t\vert{} \le 2.0$                               | $2.5 \le Z_t < 4.0$                                | $Z_t \ge 4.0$ over 100-step window                                          | Abort current batch; discard dataset shard; revert 1 step             |
+| **Global Gradient Norm**      | $\Vert{}g_t\Vert{}_2 \in [0.1, 1.5]$                      | $2.0 \le \Vert{}g_t\Vert{}_2 < 10.0$               | $\Vert{}g_t\Vert{}_2 \ge 25.0$                                              | Discard optimizer update; zero gradients; decay LR                    |
+| **Gradient Starvation**       | $\Vert{}g_t\Vert{}_2 \ge 0.01$                            | $\Vert{}g_t\Vert{}_2 < 10^{-4}$ for 3 steps        | $\Vert{}g_t\Vert{}_2 < 10^{-7}$ for 10 steps                                | Re-initialize uncalibrated linear heads; check activation scales      |
+| **Target Loss Masking**       | Active $\% \in [20\%, 60\%]$                              | Active $\% < 10\%$                                 | Active $\%=0\%$ (Zero targets)                                              | Quarantine incoming SFT batch; verify collator delimiter masks        |
+| **Cluster Node Latency**      | $\Delta t_{\text{step}} \le 1.2 \times \mu_{\text{time}}$ | $1.5\times \le \Delta t_{\text{step}} < 3.0\times$ | $\Delta t_{\text{step}} \ge 3.0 \times \mu_{\text{time}}$ or $>600\text{s}$ | Terminate job; cordon high-latency GPU node; restart on standby       |

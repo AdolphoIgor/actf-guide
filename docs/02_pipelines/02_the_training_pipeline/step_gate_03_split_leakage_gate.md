@@ -247,7 +247,7 @@ class Gate3SplitLeakageEngine:
 
         # Reference benchmark 13-gram index: Hash(13-gram) -> (benchmark_name, item_id)
         self.benchmark_ngram_index: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
-        
+
         # Validation Shingle & MinHash index
         self.val_minhash_signatures: Dict[str, List[int]] = {}
 
@@ -331,7 +331,7 @@ class Gate3SplitLeakageEngine:
         for v_rec in val_records:
             val_group_ids.add(str(v_rec["group_id"]))
             v_tokens = self._normalize_and_tokenize(v_rec["text"])
-            
+
             # Index 13-grams
             for ng in self._extract_ngrams(v_tokens):
                 h = hashlib.sha256(ng.encode("utf-8")).hexdigest()
@@ -363,7 +363,7 @@ class Gate3SplitLeakageEngine:
             # Test B: Downstream Benchmark 13-Gram Decontamination
             for ng in t_ngrams:
                 ng_hash = hashlib.sha256(ng.encode("utf-8")).hexdigest()
-                
+
                 # Check benchmark collision
                 if ng_hash in self.benchmark_ngram_index:
                     for bench_name, item_id in self.benchmark_ngram_index[ng_hash]:
@@ -428,10 +428,10 @@ class Gate3SplitLeakageEngine:
 
 ## 6. Gate 3 Pre-Flight Audit Matrix
 
-| Audit Target | Screening Method | Hard Tolerance Threshold | Action on Failure |
-| --- | --- | --- | --- |
-| **Benchmark Contamination** | 13-Gram exact token hash match | **$0$ Hits Allowed (Zero-Tolerance)** | Quarantine training document; remove from shard |
-| **Train/Val Exact Overlap** | 13-Gram exact token hash match | **$0$ Hits Allowed (Zero-Tolerance)** | Purge duplicate from training split |
-| **Fuzzy Near-Duplicates** | MinHash LSH Jaccard similarity | $\text{Jaccard} < 0.80$ | Exclude near-duplicate from training set |
-| **Group / Dialogue State** | Hash of `conversation_id` / `user_id` | **$0$ Cross-Split Collisions** | Re-partition dataset by atomic Group ID |
-| **Temporal Horizon** | Timestamp metadata assertion | $\text{Max}(T_{\text{train}}) \le \text{Min}(T_{\text{val}})$ | Strip lookahead entries; re-split chronologically |
+| Audit Target                | Screening Method                      | Hard Tolerance Threshold                                      | Action on Failure                                 |
+| --------------------------- | ------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------- |
+| **Benchmark Contamination** | 13-Gram exact token hash match        | **$0$ Hits Allowed (Zero-Tolerance)**                         | Quarantine training document; remove from shard   |
+| **Train/Val Exact Overlap** | 13-Gram exact token hash match        | **$0$ Hits Allowed (Zero-Tolerance)**                         | Purge duplicate from training split               |
+| **Fuzzy Near-Duplicates**   | MinHash LSH Jaccard similarity        | $\text{Jaccard} < 0.80$                                       | Exclude near-duplicate from training set          |
+| **Group / Dialogue State**  | Hash of `conversation_id` / `user_id` | **$0$ Cross-Split Collisions**                                | Re-partition dataset by atomic Group ID           |
+| **Temporal Horizon**        | Timestamp metadata assertion          | $\text{Max}(T_{\text{train}}) \le \text{Min}(T_{\text{val}})$ | Strip lookahead entries; re-split chronologically |

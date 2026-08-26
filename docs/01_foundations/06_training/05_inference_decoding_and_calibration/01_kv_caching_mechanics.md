@@ -51,10 +51,10 @@ $$\text{Attention}(Q_t, K_{\le t}, V_{\le t}) = \text{Softmax}\left(\frac{Q_t K_
 
 ### Key Mathematical Invariants
 
-* **Query Vector ($Q_t$):** Remains a single-row vector of shape $(1 \times d_k)$ representing only the current decoding position.
-* **Cached Keys ($K_{\le t}$):** Has shape $(t \times d_k)$, containing representations from position $1$ to $t$.
-* **Attention Score Vector ($S_t$):** Evaluates to a $1 \times t$ row vector rather than a dense $t \times t$ matrix.
-* **Causal Mask Redundancy:** Because $Q_t$ only attends to keys at positions $j \le t$ (all of which exist in the past), explicit causal lower-triangular masking is not required during single-token decoding steps.
+- **Query Vector ($Q_t$):** Remains a single-row vector of shape $(1 \times d_k)$ representing only the current decoding position.
+- **Cached Keys ($K_{\le t}$):** Has shape $(t \times d_k)$, containing representations from position $1$ to $t$.
+- **Attention Score Vector ($S_t$):** Evaluates to a $1 \times t$ row vector rather than a dense $t \times t$ matrix.
+- **Causal Mask Redundancy:** Because $Q_t$ only attends to keys at positions $j \le t$ (all of which exist in the past), explicit causal lower-triangular masking is not required during single-token decoding steps.
 
 ---
 
@@ -81,14 +81,14 @@ Autoregressive inference executes across two distinct computational regimes with
 
 ### Computational Characteristics Comparison
 
-| Dimension | Prefill Phase (Prompt Ingestion) | Decode Phase (Token Generation) |
-| --- | --- | --- |
-| **Input Shape per Batch** | $(B, T_{\text{prompt}}, d_{\text{model}})$ | $(B, 1, d_{\text{model}})$ |
-| **Primary Math Operation** | Matrix-Matrix Multiplication (GEMM) | Matrix-Vector Multiplication (GEMV) |
-| **GPU Bottleneck** | **Compute Bound** (TFLOPs / Tensor Cores) | **Memory-Bandwidth Bound** (HBM TB/s) |
-| **Attention Matrix Shape** | $(T_{\text{prompt}} \times T_{\text{prompt}})$ | $(1 \times T_{\text{current}})$ |
-| **Arithmetic Intensity** | High (Many FLOPs per byte loaded) | Low ($\approx 1\text{--}2\text{ FLOPs per byte loaded}$) |
-| **Causal Mask** | Requires 2D lower-triangular mask | No mask needed ($Q$ attends to all past $K$) |
+| Dimension                  | Prefill Phase (Prompt Ingestion)               | Decode Phase (Token Generation)                          |
+| -------------------------- | ---------------------------------------------- | -------------------------------------------------------- |
+| **Input Shape per Batch**  | $(B, T_{\text{prompt}}, d_{\text{model}})$     | $(B, 1, d_{\text{model}})$                               |
+| **Primary Math Operation** | Matrix-Matrix Multiplication (GEMM)            | Matrix-Vector Multiplication (GEMV)                      |
+| **GPU Bottleneck**         | **Compute Bound** (TFLOPs / Tensor Cores)      | **Memory-Bandwidth Bound** (HBM TB/s)                    |
+| **Attention Matrix Shape** | $(T_{\text{prompt}} \times T_{\text{prompt}})$ | $(1 \times T_{\text{current}})$                          |
+| **Arithmetic Intensity**   | High (Many FLOPs per byte loaded)              | Low ($\approx 1\text{--}2\text{ FLOPs per byte loaded}$) |
+| **Causal Mask**            | Requires 2D lower-triangular mask              | No mask needed ($Q$ attends to all past $K$)             |
 
 ---
 
@@ -104,8 +104,8 @@ $$\text{Memory}_{\text{KV}} = 2 \times 2 \times N_{\text{layers}} \times N_{\tex
 
 Where:
 
-* The first factor of $2$ accounts for storing both **Keys** and **Values**.
-* The second factor of $2$ accounts for 2 bytes per parameter (16-bit precision).
+- The first factor of $2$ accounts for storing both **Keys** and **Values**.
+- The second factor of $2$ accounts for 2 bytes per parameter (16-bit precision).
 
 $$\text{Memory per Token per Batch} = 4 \times N_{\text{layers}} \times N_{\text{kv\_heads}} \times d_{\text{head}} \quad \text{Bytes/token}$$
 
@@ -121,7 +121,7 @@ Mistral-7B (GQA + SWA 4K)       32 / 8          32      128       0.25 GB      0
 
 ```
 
-**Mistral with Sliding Window Attention (SWA) bounds the cache footprint to the window size (4,096 tokens).*
+*_Mistral with Sliding Window Attention (SWA) bounds the cache footprint to the window size (4,096 tokens)._
 
 ### The Multi-Tenant Serving Impact
 
@@ -143,9 +143,9 @@ $$K_{\text{rot}, m} = R_{\Theta, m} K_m$$
 
 Keys must be rotated **prior to insertion into the KV cache**:
 
-* The cached key tensor stores the rotated representation $K_{\text{rot}, m}$.
-* During generation at step $t$, the model computes $Q_{\text{rot}, t} = R_{\Theta, t} Q_t$, fetches cached $K_{\text{rot}, \le t}$, and computes the dot product directly.
-* This avoids re-rotating past keys at each decoding step.
+- The cached key tensor stores the rotated representation $K_{\text{rot}, m}$.
+- During generation at step $t$, the model computes $Q_{\text{rot}, t} = R_{\Theta, t} Q_t$, fetches cached $K_{\text{rot}, \le t}$, and computes the dot product directly.
+- This avoids re-rotating past keys at each decoding step.
 
 ### 2. Grouped-Query Attention (GQA) Memory Savings
 
@@ -187,7 +187,7 @@ class KVCache:
         else:
             self.k = torch.cat([self.k, k_new], dim=2)
             self.v = torch.cat([self.v, v_new], dim=2)
-            
+
         return self.k, self.v
 
     def clear(self):
@@ -289,7 +289,7 @@ class CachedGenerationEngine:
         for _ in range(max_new_tokens):
             # Pass ONLY the newest single token
             out, cache = self.attn(current_token, kv_cache=cache, use_cache=True)
-            
+
             # Simulated next-token selection (for illustration, uses the output directly)
             current_token = out[:, -1:, :]
             generated.append(current_token)

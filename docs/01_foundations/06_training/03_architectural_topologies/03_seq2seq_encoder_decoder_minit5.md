@@ -37,9 +37,9 @@ The core innovation connecting the encoder to the decoder is the **Cross-Attenti
 
 In standard self-attention, Queries ($Q$), Keys ($K$), and Values ($V$) all originate from the same input tensor. In Cross-Attention:
 
-* **Queries ($Q$):** Projected from the **current decoder hidden states** ($X_{\text{dec}}$).
-* **Keys ($K$):** Projected from the **final encoder representations** ($H_{\text{enc}}$).
-* **Values ($V$):** Projected from the **final encoder representations** ($H_{\text{enc}}$).
+- **Queries ($Q$):** Projected from the **current decoder hidden states** ($X_{\text{dec}}$).
+- **Keys ($K$):** Projected from the **final encoder representations** ($H_{\text{enc}}$).
+- **Values ($V$):** Projected from the **final encoder representations** ($H_{\text{enc}}$).
 
 ```text
     Decoder State (X_dec)               Encoder Output (H_enc)
@@ -69,9 +69,9 @@ $$\text{CrossAttention}(Q, K, V) = \text{Softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\
 
 ### Key Structural Properties of Cross-Attention
 
-* **Asymmetric Matrix Shape:** The affinity score matrix $S = Q K^T$ has dimensions $(T_{\text{dec}} \times T_{\text{enc}})$. Each row $i$ represents how much decoder token $i$ attends to every source token in the encoder.
-* **No Causal Masking:** Cross-Attention does not apply a causal triangular mask. At every decoding step $t$, the decoder has full visibility across all encoder tokens $1 \dots T_{\text{enc}}$.
-* **Static Keys and Values:** During autoregressive generation, $H_{\text{enc}}$ is computed only once. The resulting $K$ and $V$ matrices remain static while the decoder steps forward.
+- **Asymmetric Matrix Shape:** The affinity score matrix $S = Q K^T$ has dimensions $(T_{\text{dec}} \times T_{\text{enc}})$. Each row $i$ represents how much decoder token $i$ attends to every source token in the encoder.
+- **No Causal Masking:** Cross-Attention does not apply a causal triangular mask. At every decoding step $t$, the decoder has full visibility across all encoder tokens $1 \dots T_{\text{enc}}$.
+- **Static Keys and Values:** During autoregressive generation, $H_{\text{enc}}$ is computed only once. The resulting $K$ and $V$ matrices remain static while the decoder steps forward.
 
 ---
 
@@ -104,13 +104,13 @@ This enables the entire target sequence to be trained in a single parallel forwa
 def get_seq2seq_batch(items: list[str], block_size: int, stoi: dict[str, int], device: str):
     # Encoder input: original text
     X_enc = torch.stack([torch.tensor([stoi[c] for c in s]) for s in items])
-    
+
     # Target: reversed string
     Y = torch.stack([torch.tensor([stoi[c] for c in s[::-1]]) for s in items])
-    
+
     # Decoder input: shifted right with <SOS> (index 0) prepended
     X_dec = torch.cat([torch.zeros((len(items), 1), dtype=torch.long), Y[:, :-1]], dim=1)
-    
+
     return X_enc.to(device), X_dec.to(device), Y.to(device)
 
 ```
@@ -292,7 +292,7 @@ class MiniT5(nn.Module):
     ):
         super().__init__()
         self.block_size = block_size
-        
+
         # Shared Embedding and Positional Tables
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
@@ -379,7 +379,7 @@ def generate_seq2seq(
     # 3. Autoregressively roll out generation
     for _ in range(block_size - 1):
         logits, _ = model(enc_in, dec_in)
-        
+
         # Greedy argmax selection on last position
         next_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
         dec_in = torch.cat([dec_in, next_token], dim=1)
@@ -393,11 +393,11 @@ def generate_seq2seq(
 
 ## 7. Paradigm Comparison: GPT vs. BERT vs. T5
 
-| Architectural Dimension | Autoregressive Decoder (MiniGPT) | Masked Encoder (MiniBERT) | Seq2Seq Encoder-Decoder (MiniT5) |
-| --- | --- | --- | --- |
-| **Attention Topologies** | Causal Masked Self-Attention | Unmasked Bidirectional Attention | **Bidirectional (Enc) + Causal (Dec) + Cross-Attention** |
-| **Primary Objective** | Next-Token Prediction ($P(x_t \mid x_{<t})$) | Masked Reconstruction ($P(x_{\mathcal{M}} \mid \tilde{X})$) | **Conditional Generation ($P(Y \mid X)$)** |
-| **Input / Output Structure** | Single continuous sequence | Noisy input $\rightarrow$ Clean output | **Source Sequence $X$ $\rightarrow$ Target Sequence $Y$** |
-| **Cross-Attention Bridge** | None | None | **Active in all Decoder blocks** |
-| **FLOP Allocation** | $100\%$ on generation | $100\%$ on representation | **Split across Encoding ($H_{\text{enc}}$) and Generation** |
-| **Target Use Cases** | Open-ended text, dialogue, code generation | Embeddings, classification, NER, search | **Translation, summarization, structured transduction** |
+| Architectural Dimension      | Autoregressive Decoder (MiniGPT)             | Masked Encoder (MiniBERT)                                   | Seq2Seq Encoder-Decoder (MiniT5)                            |
+| ---------------------------- | -------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
+| **Attention Topologies**     | Causal Masked Self-Attention                 | Unmasked Bidirectional Attention                            | **Bidirectional (Enc) + Causal (Dec) + Cross-Attention**    |
+| **Primary Objective**        | Next-Token Prediction ($P(x_t \mid x_{<t})$) | Masked Reconstruction ($P(x_{\mathcal{M}} \mid \tilde{X})$) | **Conditional Generation ($P(Y \mid X)$)**                  |
+| **Input / Output Structure** | Single continuous sequence                   | Noisy input $\rightarrow$ Clean output                      | **Source Sequence $X$ $\rightarrow$ Target Sequence $Y$**   |
+| **Cross-Attention Bridge**   | None                                         | None                                                        | **Active in all Decoder blocks**                            |
+| **FLOP Allocation**          | $100\%$ on generation                        | $100\%$ on representation                                   | **Split across Encoding ($H_{\text{enc}}$) and Generation** |
+| **Target Use Cases**         | Open-ended text, dialogue, code generation   | Embeddings, classification, NER, search                     | **Translation, summarization, structured transduction**     |

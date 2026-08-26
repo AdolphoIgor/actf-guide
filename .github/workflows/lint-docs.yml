@@ -24,7 +24,7 @@ jobs:
           pip install mkdocs-material pymdown-extensions
 
       - name: Lint Markdown
-        uses: nosid/cocogitto-action@v3 # Or markdownlint-cli2 / markdownlint-action
+        uses: cocogitto/cocogitto-action@v3 # Or markdownlint-cli2 / markdownlint-action
         continue-on-error: true
 
       - name: Strict MkDocs Build (Checks links & syntax)
