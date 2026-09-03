@@ -1,8 +1,3 @@
-> **Quick Language Note:** In English, the exclamation is spelled **"Oops!"** or **"Whoops!"** rather than _"Ops!"_. A natural, colloquial phrasing would be: _"Oops! Looks like there's an issue with a table in this chapter. Could you fix it without changing the content?"_
-
-Here is the complete, corrected Markdown file with the table syntax repaired on single unbroken lines:
-
-````markdown
 # The Enterprise LLMOps
 
 ## 1. Core Objective
@@ -61,7 +56,8 @@ The enterprise Continuous Training architecture executes sequentially across six
 [ Live Observability ] ──► (If metrics drift, alerts trigger the Orchestrator to restart)
 (Langfuse / Arize)
 ```
-````
+
+```
 
 ### 1. The Data Ingestion & Transformation Layer
 
@@ -123,3 +119,4 @@ Here is the fixed table:
 - **Data Lineage Immutability Contract:** Training datasets are never updated in place. Every dataset modification generates a new DVC commit hash, creating a strictly additive, immutable data ledger.
 - **Asynchronous Tracing Overhead Isolation:** Production tracing tools log prompts, completion tokens, and latency metrics asynchronously out-of-band to ensure observability overhead adds zero millisecond latency penalties to client-facing threads.
 - **Zero-Downtime Serving Swaps:** Inference serving clusters execute rolling model updates using atomic blue/green deployment strategy wrappers, ensuring vLLM and Triton instances swap model checkpoints without dropping active client TCP connections.
+```
