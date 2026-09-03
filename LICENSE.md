@@ -8,8 +8,8 @@ This repository is dual-licensed to distinguish between the conceptual architect
 
 All written documentation, guides, chapters, and architectural diagrams located in the `/docs` directory are licensed under the **Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)**.
 
-* **Summary:** You are free to share and copy the material in any medium or format, provided you give appropriate credit and link to the source. You **may not** use the material for commercial purposes, and if you remix, transform, or build upon the material, you **may not** distribute the modified material.
-* **Full Legal Code:** [https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode)
+- **Summary:** You are free to share and copy the material in any medium or format, provided you give appropriate credit and link to the source. You **may not** use the material for commercial purposes, and if you remix, transform, or build upon the material, you **may not** distribute the modified material.
+- **Full Legal Code:** [https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode)
 
 ---
 
@@ -39,3 +39,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
